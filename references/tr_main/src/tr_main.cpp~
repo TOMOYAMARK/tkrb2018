@@ -1,0 +1,145 @@
+#include "ros/ros.h"
+#include "std_msgs/String.h"
+#include "sensor_msgs/Joy.h"
+#include "std_msgs/Int32.h"
+#include "std_msgs/Int8.h"
+//#include "tr_controller/motor.h"
+#include <sstream>
+
+#define THRESHOLD 0.7
+#define DEFAULTPW 30
+#define WHEEL_DIAMETER 87.5 * 2   //mm
+#define INNER_WHEEL_DISTANCE 585  //mm
+#define PI 3.14 //pi
+#define PULSE_PER_STEP 1.8 //degree
+#define ONE_PULSE_DISTANCE WHEEL_DIAMETER * PI * PULSE_PER_STEP / 360 //mm
+#define ONE_GRID_DISTANCE 300 //mm
+
+std_msgs::Int8 power_motor_l,power_motor_r;
+int pulse_motor_r, pulse_motor_l;
+const char[100] plan = [
+			'f', '3',
+			'r', '90',
+			'l', '90',
+			'b', '3',
+			's', '0',
+			]
+  
+void pulseMotorRCallback(const std_msgs::Int32::ConstPtr& msg) {
+  pulse_motor_r = msg->data;
+}
+void pulseMotorLCallback(const std_msgs::Int32::ConstPtr& msg) {
+  pulse_motor_l = msg->data;
+}
+  
+double turn_pulse(double degree) {
+  // add the result to one param and sub the result to another param
+  return (PI * INNER_WHEEL_DISTANCE) / 4;
+}
+
+double foward_pulse(double grid_sum) {
+  return (ONE_GRID_DISTANCE * grid_sum) / ONE_PULSE_DISTANCE;
+}
+
+void move_handler() {
+  static int state = 0; //0 is to set, 1 is working.
+  static int number = 0;
+  static char task = 'x';
+  static double param = 0.0;
+  static int target_r = 0;
+  static int target_l = 0;  
+    
+  if (state == 0) {
+    task = plan[number];
+    param = (double)plan[number+1];
+    switch(task) {
+    case 'f':
+      target_r = pulse_motor_r += fowardPulse(param);
+      target_l = pulse_motor_l += fowardPulse(param);
+      power_motor_r = DEFAULTPW;
+      power_motor_l = DEFAULTPW;
+      break;
+    case 'b':
+      target_r = pulse_motor_r -= fowardPulse(param);
+      target_l = pulse_motor_l -= fowardPulse(param);
+      power_motor_r = -DEFAULTPW;
+      power_motor_l = -DEFAULTPW;
+      break;
+    case 'r':
+      target_r = pulse_motor_r += turnPulse(param);
+      target_l = pulse_motor_l -= turnPulse(param);
+      power_motor_r = DEFAULTPW;
+      power_motor_l = -DEFAULTPW;
+      break;
+    case 'l':
+      target_r = pulse_motor_r -= turnPulse(param);
+      target_l = pulse_motor_l += turnPulse(param);
+      power_motor_r = -DEFAULTPW;
+      power_motor_l = -DEFAULTPW;      
+      break;      
+    case 's'://stop
+      power_motor_r = 0;
+      power_motor_l = 0;     
+      break;      
+    }    
+    state = 1;    
+  } else {
+    switch(task) {
+    case 'f':
+      if (target_r < pulse_motor_r && target_l < pulse_motor_l) {
+	state = 0;
+      }
+      break;
+    case 'b':
+      if (target_r > pulse_motor_r && target_l > pulse_motor_l) {
+	state = 0;
+      }
+      break;
+    case 'r':
+      if (target_r < pulse_motor_r && target_l > pulse_motor_l) {
+	state = 0;
+      }
+      break;
+    case 'l':
+      if (target_r > pulse_motor_r && target_l < pulse_motor_l) {
+	state = 0;
+      }
+      break;
+    }    
+    
+  }
+}
+  
+
+//std_msgs::Int8 mv; // 0静止　1前進　2後退　3左旋回　4右旋回
+
+int main(int argc, char **argv)
+{
+  ros::init(argc, argv, "main");
+  ros::NodeHandle n;
+  //ros::Subscriber joy = n.subscribe("joy",1000,joyCallback);
+  //ros::Publisher motorR_pub = n.advertise<std_msgs::Int8>("motorR", 1000);
+  //ros::Publisher motorL_pub = n.advertise<std_msgs::Int8>("motorL",1000);
+  //ros::Publisher motor_pub = n.advertise<std_msgs::Int8MultiArray>("motor", 1000);
+  //ros::Publisher motor_pub = n.advertise<tr_controller::motor>("motor",1000);
+  //ros::Publisher move_pub = n.advertise<std_msgs::Int8>("move",1000);
+  ros::Publisher motorL_pub = n.advertise<std_msgs::Int8>("motorL",1000);
+  ros::Publisher motorR_pub = n.advertise<std_msgs::Int8>("motorR",1000);
+  ros::Subscriber pulse_motor_r = n.subscribe("pulse_motor_r",1000, pulseMotorRCallback);
+  
+  ros::Rate loop_rate(10);
+
+  int count = 0;
+  while (ros::ok())
+  {
+
+    motorL_pub.publish(power_motor_l);
+    motorR_pub.publish(power_motor_r);
+    ros::spinOnce();
+    loop_rate.sleep();
+    ++count;
+  }
+
+
+  return 0;
+}

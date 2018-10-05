@@ -1,0 +1,70 @@
+#!/usr/bin/env python 
+from tr_main.srv import *
+import rospy
+
+plan = [
+    ['c', '1'],
+    ['s', 'ST'],
+    ['f', '1'],
+    ['c', '2'],
+    ['s', 'ST'],
+    ['l', '90'],
+    ['f', '2'],
+    ['c', '2'],
+    ['s', 'ST'],
+    ['r', '90'],    
+    ['f', '5'],
+    ['c', '2'],
+    ['s', 'ST'],
+    ['r', '90'],
+    ['f', '4'],
+    ['c', '2'],    
+    ['s', 'ST'],
+    ['r', '90'],
+    ['f', '4'],
+    ['c', '2'],    
+    ['s', 'ST'],
+    ['r', '90'],
+    ['f', '2'],
+    ['c', '90'],    
+    ['s', '1'],
+    ['r', '1'],
+    ['u', '1'],
+    ['s', 'ST_UP'],
+    ['c', '3'],    
+    ['f', '1'],
+    ['p', '2'],    
+    ['s', '300'],
+    ['f', '0.1'],
+    ['b', '0.1'],
+    ['f', '0.1'],
+    ['b', '0.1'],
+    ['f', '0.1'],
+    ['b', '0.1'],
+    ['b', '0.1'],
+    ['f', '0.1'],
+    ['b', '0.1'],    
+    ['z', '0'],
+    ['s', '50'],
+    ['b', '3'],
+]
+
+
+def handle_plan_command(req):
+#    print "Returning [%s + %s = %s]"%(req.a, req.b, (req.a + req.b))
+#    return AddTwoIntsResponse(req.a + req.b)    
+    return PlanCommandResponse(plan[0][req.i])
+
+def handle_plan_param(req):
+    return PlanParamResponse(plan[1][req.i])    
+
+def add_two_ints_server():
+    rospy.init_node('plan_command_server')
+    s = rospy.Service('plan_command', PlanCommand, handle_plan_command)
+    s = rospy.Service('plan_param', PlanParam, handle_plan_param)    
+    print "Ready to add two ints.xxxxx"
+    rospy.spin()
+
+if __name__ == "__main__":
+    plan_command_server()
+    
