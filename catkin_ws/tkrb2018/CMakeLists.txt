@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
+  message_generation
 )
 
 find_package(OpenCV)
@@ -55,12 +56,13 @@ find_package(OpenCV)
 #   Message2.msg
 # )
 
-## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
-#   Service2.srv
-# )
+# Generate services in the 'srv' folder
+ add_service_files(
+   FILES
+   AddTwoInts.srv
+   PlanCommand.srv
+   PlanParam.srv
+ )
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -70,10 +72,10 @@ find_package(OpenCV)
 # )
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   std_msgs
-# )
+ generate_messages(
+   DEPENDENCIES
+   std_msgs
+ )
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -106,8 +108,8 @@ find_package(OpenCV)
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES tkrb2018
-#  CATKIN_DEPENDS opencv2 roscpp rospy std_msgs
+#  LIBRARIES tr_main
+#  CATKIN_DEPENDS opencv2 roscpp rospy std_msgs message_runtime
 #  DEPENDS system_lib
 )
 
@@ -124,7 +126,7 @@ include_directories(
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/tkrb2018.cpp
+#   src/${PROJECT_NAME}/tr_main.cpp
 # )
 
 ## Add cmake target dependencies of the library
@@ -135,7 +137,7 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-# add_executable(${PROJECT_NAME}_node src/tkrb2018_node.cpp)
+# add_executable(${PROJECT_NAME}_node src/tr_main_node.cpp)
 
 
 ## Rename C++ executable without prefix
@@ -194,10 +196,16 @@ include_directories(
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_tkrb2018.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_tr_main.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
+include_directories(include ${catkin_INCLUDE_DIRS})
+
+add_executable(tr_main src/tr_main.cpp)
+add_executable(tr_motor_sub src/tr_motor_sub.cpp)
+target_link_libraries(tr_main ${catkin_LIBRARIES})
+target_link_libraries(tr_motor_sub ${catkin_LIBRARIES})
