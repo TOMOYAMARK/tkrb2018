@@ -1,11 +1,15 @@
-#include "courseDeterminer.h"
-#include "ros/ros.h"
-#include "std_msgs/int8.h"
+#include "courseDeterminer.hpp"
 #include <sstream>
 
+enum RoboCourse : char {
+    straight='s',
+    right='r',
+    left='l',
+    cross='x'
+};
+
 //進路決定関数 外部で使うのはこれだけ
-RoboCourse GetCourse() {
-    int lineSensorValue;
+char GetCourse(const int lineSensorValue) {
     if(isOnCourse(lineSensorValue)) {
         ROS_INFO("Robo will go straight.");
         return RoboCourse::straight;
@@ -14,7 +18,7 @@ RoboCourse GetCourse() {
         ROS_INFO("Robo will turn right.");
         return RoboCourse::right;
     }
-    else if(inOnRight(lineSensorValue)) {
+    else if(isOnRight(lineSensorValue)) {
         ROS_INFO("Robo will turn left.");
         return RoboCourse::left;
     }
@@ -28,7 +32,7 @@ RoboCourse GetCourse() {
     }
     else if(isOnRCorner(lineSensorValue)) {
         ROS_INFO("Robo will turn right: Robo is on the corner.");
-        return RoboCourse::rigit;
+        return RoboCourse::right;
     }
     else if(isOnLCorner(lineSensorValue)) {
         ROS_INFO("Robo will turn left: Robo is on the corner.");
@@ -36,7 +40,7 @@ RoboCourse GetCourse() {
     }
 }
 
-//現状把握関数
+//##どこにいるのかどんな状態なのか確認するやつ##
 bool isOnCourse(const int lsValue) {
     if((lsValue & 0b00010000) || (lsValue & 0b00001000))
         return true;
