@@ -10,6 +10,13 @@
 bool current_status = false;
 int pulse_count = 0;
 
+
+ros::NodeHandle nh;
+void servoWriteSync(int ang);
+void closeHand();
+void openHand();
+
+
 void stp_pulse(){
   if(current_status){
     digitalWrite(STP_CW,HIGH);
@@ -19,15 +26,23 @@ void stp_pulse(){
   }
 }
 
+void collectCallback(const std_msgs::Int8& msg) {
+  servoWriteSync(msg.data);
+}
 
 Servo servo_l;
 Servo servo_r;
 
+ros::Subscriber<std_msgs::Int8> collect_sub("collect_req",collectCallback);
+
 int pos = 0;    //collect part angle 0->close 180->open
 
 void setup() {
-  servo_l.attach(A0);  // attaches the servo on pin 9 to the servo object
-  servo_r.attach(A1);
+  servo_l.attach(A1);  // attaches the servo on pin 9 to the servo object
+  servo_r.attach(A0);
+
+  nh.initNode();
+  nh.subscribe(collect_sub);
 }
 
 void servoWriteSync(int ang){//x->collect part angle 0->close 180->open
@@ -57,5 +72,7 @@ void loop() {
     servo_r.write(180-pos);
     delay(15);                       // waits 15ms for the servo to reach the position
   }
+  delayMicroseconds(10);
+  nh.spinOnce();
 }
 

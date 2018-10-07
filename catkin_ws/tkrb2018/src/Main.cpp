@@ -23,8 +23,8 @@ int fieldMap[9][10] = {};//マッピング情報。各格子点の状態を要�
 #define STEP 1.8
 #define WHEEL_DIAMETER 150//mm-?
 #define MM_PER_PULSE (WHEEL_DIAMETER * PI / 360)*STEP//mm
-#define DEFAULT_MOTOR_POW 90//max 100
-#define INNER_WHEEL_DISTANCE 380//mm
+#define DEFAULT_MOTOR_POW 90//max 100(%)
+#define INNER_WHEEL_DISTANCE 380//mmタイヤ間距離
 
 /*-------------------機体の情報-----------------*/
 int selfPosition[2] = {4,9};//初期位置。下図のS
@@ -84,7 +84,7 @@ void forbackMachine(int d);//前進後退
 
 /*-----------------------コールバック関数------------*/
 void takeSnapShot();
-void joyCallback(const sensor_msgs::Joy::ConstPtr& joy);
+void joyCallback(const sensor_msgs::Joy::ConstPtr& joy);//テスト用
 void pulseRCallback(const std_msgs::Int32::ConstPtr& pR);
 void pulseLCallback(const std_msgs::Int32::ConstPtr& pL);
 /*--------------------------------------------------*/
@@ -99,7 +99,7 @@ bool checkTargetPulse(int val, int target, int ex = 0, bool cw = true);//目標�
 void taskFlowHandler();//taskキューのメイン処理
 /*---------------------------------------------*/
 
-double  start, end;//時間計測用変数
+double startTime, endTime;//時間計測用変数
 
 
 int main(int argc, char **argv)
@@ -220,7 +220,6 @@ void forbackMachine(int d){// d=FORWARD or BACKWARD 前進、後退を反映
     switch(headingDirection){
     case FORWARD:
       selfPosition[1]--;
-      //ROS_INFO("I moved");
       break;
     case RIGHT:
       selfPosition[0]++;
@@ -336,7 +335,7 @@ void setTarget(char t, int par){
   case 'p':
     {
     //一定時間動作停止
-    start = ros::Time::now().toSec();//時間計測開始
+    startTime = ros::Time::now().toSec();//時間計測開始
     setMotorSpeed(0,0);
     state = WORKING;
     }
@@ -410,8 +409,8 @@ bool checkMoveProgress(char t, int par){
   case 'p':
     {
     //一時停止
-    end = ros::Time::now().toSec();
-    double timeCount = end - start;
+    endTime = ros::Time::now().toSec();
+    double timeCount = endTime - startTime;
     if(timeCount > par){
       return 1;
     } else {
@@ -453,7 +452,6 @@ void taskFlowHandler(){
     if(checkMoveProgress(task,param) == true){//目標パルスに届いたら
       setMotorSpeed(0,0);//マシンを止める。
       state = IDLE;//次の動作を受け付ける。
-      //ROS_INFO("requesting next task");
       moveMachineOnMap(task);
       showMap();
     }
