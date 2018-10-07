@@ -1,4 +1,4 @@
-#include "courseDeterminer.hpp"
+#include "courseDeterminer.h"
 #include "ros/ros.h"
 #include "std_msgs/int8.h"
 #include <sstream>
@@ -20,11 +20,11 @@ RoboCourse GetCourse() {
     }
     else if(isOnCross(lineSensorValue)) {
         ROS_INFO("Robo is on the cross.");
-        return RoboCourse::cross
+        return RoboCourse::cross;
     }
     else if(isOnTCross(lineSensorValue)) {
         ROS_INFO("Robo is on the T-cross.");
-        return RoboCourse::corner;
+        return RoboCourse::cross;
     }
     else if(isOnRCorner(lineSensorValue)) {
         ROS_INFO("Robo will turn right: Robo is on the corner.");
