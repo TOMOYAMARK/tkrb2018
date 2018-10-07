@@ -12,7 +12,7 @@
 #define TUNE_PULSE 45
 
 #define THRESHOLD 0.7
-#define DEFAULTPW 60
+#define DEFAULTPW 90
 #define WHEEL_DIAMETER 87.5 * 2   //mm
 #define INNER_WHEEL_DISTANCE 585  //mm
 #define PI 3.14 //pi
