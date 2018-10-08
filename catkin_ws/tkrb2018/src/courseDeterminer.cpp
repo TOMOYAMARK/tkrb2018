@@ -2,17 +2,17 @@
 #include <sstream>
 
 enum RoboCourse : char {
-    straight='s',
-    right='r',
-    left='l',
-    cross='x'
+    forward='F',
+    right='R',
+    left='L',
+    cross='X'
 };
 
 //進路決定関数 外部で使うのはこれだけ
 char GetCourse(const int lineSensorValue) {
     if(isOnCourse(lineSensorValue)) {
-        ROS_INFO("Robo will go straight.");
-        return RoboCourse::straight;
+        ROS_INFO("Robo will go forward.");
+        return RoboCourse::forward;
     }
     else if(isOnLeft(lineSensorValue)) {
         ROS_INFO("Robo will turn right.");

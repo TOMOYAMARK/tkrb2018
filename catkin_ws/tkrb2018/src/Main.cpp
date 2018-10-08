@@ -7,6 +7,7 @@
 #include "std_msgs/MultiArrayDimension.h"
 #include "std_msgs/Int8MultiArray.h"
 #include "tkrb2018/PlanQueue.h"
+#include "courseDeterminer.hpp"
 #include <stdio.h>
 #include <string>
 #include <iostream>
