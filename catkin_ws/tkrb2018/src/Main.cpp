@@ -1,5 +1,6 @@
 #include "ros/ros.h"
 #include "std_msgs/Int8.h"
+#include "std_msgs/Int16.h"
 #include "std_msgs/Int32.h"
 #include "std_msgs/String.h"
 #include "sensor_msgs/Joy.h"
@@ -93,8 +94,8 @@ void pulseLCallback(const std_msgs::Int32::ConstPtr& pL);
 /*---------------走行系の関数-------------------*/
 int cvtDegreesToPulse(double degs);//角度パラメータを入力パルスに変換
 int cvtUnitToPulse(double units);//すすめるマスを入力パルスに変換
-bool checkMoveProgress(char t,int par);//taskの動作が完了したかどうか、パルスを見て判断
-void setTarget(char t, int par);//目標パルスを算出
+bool checkMoveProgress(char t,double par);//taskの動作が完了したかどうか、パルスを見て判断
+void setTarget(char t, double par);//目標パルスを算出
 bool checkTargetPulse(int val, int target, int ex = 0, bool cw = true);//目標パルスに入力パルスが近づいたら（ex(extention)=判定範囲）
 void taskFlowHandler();//taskキューのメイン処理
 /*---------------------------------------------*/
@@ -110,8 +111,8 @@ int main(int argc, char **argv)
   initializeMap();
   showMap();
   webcamRequestPub = n.advertise<std_msgs::Int8>("snapshot_req", 1000);
-  collectRequest = n.advertise<std_msgs::Int8>("collect_req", 1000);
-  liftRequest = n.advertise<std_msgs::Int8>("lift_req", 1000);
+  collectRequest = n.advertise<std_msgs::Int16>("collect_req", 1000);
+  liftRequest = n.advertise<std_msgs::Int16>("lift_req", 1000);
   webcamOutputSub = n.subscribe("webcam_out", 1000, snapshotCallback);
   testSub = n.subscribe("test",1000,testCallback);
   ros::Subscriber joy = n.subscribe("joy",1000,joyCallback);
@@ -293,7 +294,7 @@ void publishMotorInput(){
   motorRInput.publish(motor_input_r);
 }
 
-void setTarget(char t, int par){
+void setTarget(char t, double par){
   switch(t){
   case 'f':
     {
@@ -338,22 +339,26 @@ void setTarget(char t, int par){
     startTime = ros::Time::now().toSec();//時間計測開始
     setMotorSpeed(0,0);
     state = WORKING;
+    ROS_INFO("pause at:%f",startTime);
+    break;
     }
   case 'c':
     {
     //回収部操作
-    std_msgs::Int8 ang;
+    std_msgs::Int16 ang;
     ang.data = par;
     collectRequest.publish(ang);//0->close 180->open
     state = IDLE;//サーボを動かす間もタスクを受け付ける（止めたい場合は'p'を使う）
+    break;
     }
   case 'z':
     {
     //回収部を持ち上げるステピの制御
-    std_msgs::Int8 liftPulse;
+    std_msgs::Int16 liftPulse;
     liftPulse.data = par;
     liftRequest.publish(liftPulse);// + -
     state = IDLE;//ステピを動かす間もタスクを受け付ける
+    break;
     }
   default:
     return;
@@ -372,7 +377,7 @@ bool checkTargetPulse(int val, int target, int ex, bool cw){
 }
      
 
-bool checkMoveProgress(char t, int par){
+bool checkMoveProgress(char t, double par){
   switch(t){
   case 'f':
     {
@@ -413,8 +418,6 @@ bool checkMoveProgress(char t, int par){
     double timeCount = endTime - startTime;
     if(timeCount > par){
       return 1;
-    } else {
-      return 0;
     }
     break;
     }
@@ -450,6 +453,7 @@ void taskFlowHandler(){
     ROS_INFO("%c,%f",task,param);
   }else if(state == WORKING){
     if(checkMoveProgress(task,param) == true){//目標パルスに届いたら
+      ROS_INFO("reached");
       setMotorSpeed(0,0);//マシンを止める。
       state = IDLE;//次の動作を受け付ける。
       moveMachineOnMap(task);
@@ -462,7 +466,7 @@ void taskFlowHandler(){
 void joyCallback(const sensor_msgs::Joy::ConstPtr& joy){
   if(joy -> buttons[1]){
     //Controller ボタン２
-    std_msgs::Int8 val;
+    std_msgs::Int16 val;
     val.data = 180;
     collectRequest.publish(val);
   }else if(joy -> buttons[2]){
@@ -471,7 +475,7 @@ void joyCallback(const sensor_msgs::Joy::ConstPtr& joy){
     //Controller ボタン４
   }else if(joy -> buttons[0]){
     //Controller ボタン１
-    std_msgs::Int8 val;
+    std_msgs::Int16 val;
     val.data = 0;
     collectRequest.publish(val);
   }

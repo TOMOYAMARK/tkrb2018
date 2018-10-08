@@ -20,8 +20,8 @@ ros::NodeHandle nh;
 float x; 
 
 // stepping motor
-static const int motor_cw[STEPPING_MOTOR_SUM] = {35, 36, 46};//{10, 8, 6};
-static const int motor_ccw[STEPPING_MOTOR_SUM] = {38, 34, 36};//{9, 7, 5};
+static const int motor_cw[STEPPING_MOTOR_SUM] = {28, 34, 41};//{10, 8, 6};
+static const int motor_ccw[STEPPING_MOTOR_SUM] = {26, 36, 40};//{9, 7, 5};
 //static const int motor_min_low_time[STEPPING_MOTOR_SUM] = {50, 50, 50};
 //static const int motor_max_low_time[STEPPING_MOTOR_SUM] = {200, 200, 200};
 static const int motor_min_low_time[STEPPING_MOTOR_SUM] = {200, 200, 1000};

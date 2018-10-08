@@ -1,5 +1,5 @@
 #include <ros.h>
-#include <std_msgs/Int8.h>
+#include <std_msgs/Int16.h>
 #include <Servo.h>
 
 #define CLOSED_ANG 0
@@ -7,8 +7,8 @@
 
 
 // stepping motor
-#define STP_CW 40
-#define STP_CCW 38
+#define STP_CW 28
+#define STP_CCW 30
 #define STEPPING_MOTOR_SUM 1
 #define STEP 0.1
 #define LIFT_PW 60
@@ -30,7 +30,7 @@ void servoWriteSync(int ang);
 void closeHand();
 void openHand();
 
-void collectCallback(const std_msgs::Int8& msg) {
+void collectCallback(const std_msgs::Int16& msg) {
   servoWriteSync(msg.data);
 }
 
@@ -93,18 +93,18 @@ void stepping_motor_init() {
   }
 }
 
-void motorLiftCallback(const std_msgs::Int8& msg) {
+void motorLiftCallback(const std_msgs::Int16& msg) {
   boolean tf = false;
   if (msg.data>=0){
     tf = true;
   }
-  target_pulse = msg.data / STEP;
-  //motor_set_speed(2, tf, LIFT_PW);
+  target_pulse = abs(msg.data) / STEP;
+  motor_set_speed(0, tf, LIFT_PW);
 }
 
 
-ros::Subscriber<std_msgs::Int8> collect_sub("collect_req",collectCallback);
-ros::Subscriber<std_msgs::Int8> lift_sub("lift_req",motorLiftCallback);
+ros::Subscriber<std_msgs::Int16> collect_sub("collect_req",collectCallback);
+ros::Subscriber<std_msgs::Int16> lift_sub("lift_req",motorLiftCallback);
 
 void servoWriteSync(int ang){//x->collect part angle 0->close 180->open
   //move servos opposite each other with sync
@@ -122,8 +122,8 @@ void openHand(){
 
 void setup() {
   pinMode(13, OUTPUT);
-  servo_l.attach(A1);  // attaches the servo on pin 9 to the servo object
-  servo_r.attach(A0);
+  servo_l.attach(A0);  // attaches the servo on pin 9 to the servo object
+  servo_r.attach(A3);
 
   nh.initNode();
   nh.subscribe(collect_sub);
@@ -135,7 +135,6 @@ void setup() {
 
 void loop() {
   if(target_pulse > 0){
-    motor_set_speed(0,true,LIFT_PW);
     timer1_controll();
     target_pulse--;
   }else motor_set_speed(0,true,0);
