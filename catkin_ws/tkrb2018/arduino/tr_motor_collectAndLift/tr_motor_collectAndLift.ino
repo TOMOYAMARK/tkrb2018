@@ -1,3 +1,6 @@
+//
+
+
 #include <ros.h>
 #include <std_msgs/Int16.h>
 #include <Servo.h>
@@ -24,18 +27,20 @@ int motor_foward[STEPPING_MOTOR_SUM] = {0};// true is 1, false is -1, stop is 0.
 int motor_low_time[STEPPING_MOTOR_SUM] = {0};
 volatile long pulse_count[STEPPING_MOTOR_SUM] = {0};
 
+Servo hand_servo_l,hand_servo_r;
+Servo neck_servo_l,neck_servo_r;
 
 ros::NodeHandle nh;
-void servoWriteSync(int ang);
-void closeHand();
-void openHand();
+void handWriteSync(int ang);//
+void neckWriteSync(int ang);//tougou yotei
 
 void collectCallback(const std_msgs::Int16& msg) {
-  servoWriteSync(msg.data);
+  handWriteSync(msg.data);
+}
+void neckCallback(const std_msgs::Int16& msg) {
+  neckWriteSync(msg.data);
 }
 
-Servo servo_l;
-Servo servo_r;
 
 void motor_set_speed(int motor_no, boolean foward, int speed) {
   if (speed == 0) {
@@ -60,10 +65,12 @@ void motor_set_speed(int motor_no, boolean foward, int speed) {
 void motor_controll(int motor_no, int pulse_pin, bool *current_status, int *t, int low_time){
   if (*current_status == false){
       digitalWrite(pulse_pin, HIGH);
+      target_pulse--;
       *current_status = true;
       pulse_count[motor_no] += motor_foward[motor_no];
       *t = 4; // high_time. CMD2020P is good by this time.
     } else {
+      target_pulse--;
       digitalWrite(pulse_pin, LOW);
       *current_status = false;
       *t = low_time;
@@ -98,35 +105,35 @@ void motorLiftCallback(const std_msgs::Int16& msg) {
   if (msg.data>=0){
     tf = true;
   }
-  target_pulse = abs(msg.data) / STEP;
-  motor_set_speed(0, tf, LIFT_PW);
+  target_pulse = (abs(msg.data) / STEP)*2;
+  motor_set_speed(0, tf, 100);
 }
-
 
 ros::Subscriber<std_msgs::Int16> collect_sub("collect_req",collectCallback);
 ros::Subscriber<std_msgs::Int16> lift_sub("lift_req",motorLiftCallback);
+ros::Subscriber<std_msgs::Int16> neck_sub("neck_req",neckCallback);
 
-void servoWriteSync(int ang){//x->collect part angle 0->close 180->open
+void handWriteSync(int ang){//x->collect part angle 0->close 180->open
   //move servos opposite each other with sync
-  servo_l.write(ang);
-  servo_r.write(180-ang);
+  hand_servo_l.write(ang);
+  hand_servo_r.write(180-ang);
 }
-
-void closeHand(){
-  servoWriteSync(CLOSED_ANG);
-}
-
-void openHand(){
-  servoWriteSync(OPENED_ANG);
+void neckWriteSync(int ang){//x->collect part angle 0->close 180->open
+  //move servos opposite each other with sync
+  neck_servo_l.write(ang);
+  neck_servo_r.write(180-ang);
 }
 
 void setup() {
   pinMode(13, OUTPUT);
-  servo_l.attach(A0);  // attaches the servo on pin 9 to the servo object
-  servo_r.attach(A3);
+  hand_servo_l.attach(A0);  // attaches the servo on pin 9 to the servo object
+  hand_servo_r.attach(A3);
+  neck_servo_l.attach(A1);  // attaches the servo on pin 9 to the servo object
+  neck_servo_r.attach(A2);
 
   nh.initNode();
   nh.subscribe(collect_sub);
+  nh.subscribe(neck_sub);
   nh.subscribe(lift_sub);
 
   stepping_motor_init();
@@ -136,7 +143,6 @@ void setup() {
 void loop() {
   if(target_pulse > 0){
     timer1_controll();
-    target_pulse--;
   }else motor_set_speed(0,true,0);
   delayMicroseconds(1);
   nh.spinOnce();

@@ -63,6 +63,7 @@ ros::Publisher webcamRequestPub;//ImageProcessing.pyに画像処理を依頼す�
 ros::Publisher motorRInput,motorLInput;
 ros::Publisher collectRequest;//回収用サーボを動かすリクエストを送る。
 ros::Publisher liftRequest;//回収用ステピを動かすリクエストを送る。
+ros::Publisher neckRequest;//回収用ステピを動かすリクエストを送る。
 ros::Subscriber webcamOutputSub;//ImageProcessing.pyから返る値を扱う。
 ros::Subscriber testSub,controlerSub;//テスト用。
 ros::Subscriber pulseLSub,pulseRSub;//足回りのパルス読み取り
@@ -113,6 +114,7 @@ int main(int argc, char **argv)
   webcamRequestPub = n.advertise<std_msgs::Int8>("snapshot_req", 1000);
   collectRequest = n.advertise<std_msgs::Int16>("collect_req", 1000);
   liftRequest = n.advertise<std_msgs::Int16>("lift_req", 1000);
+  neckRequest = n.advertise<std_msgs::Int16>("neck_req", 1000);
   webcamOutputSub = n.subscribe("webcam_out", 1000, snapshotCallback);
   testSub = n.subscribe("test",1000,testCallback);
   ros::Subscriber joy = n.subscribe("joy",1000,joyCallback);
@@ -355,9 +357,19 @@ void setTarget(char t, double par){
     {
     //回収部を持ち上げるステピの制御
     std_msgs::Int16 liftPulse;
+    ROS_INFO("lifting");
     liftPulse.data = par;
     liftRequest.publish(liftPulse);// + -
     state = IDLE;//ステピを動かす間もタスクを受け付ける
+    break;
+    }
+  case 'n':
+    {
+    //回収部を回転させるサーボの操作
+    std_msgs::Int16 neckServoAng;
+    neckServoAng.data = par;
+    neckRequest.publish(neckServoAng);
+    state = IDLE;
     break;
     }
   default:
