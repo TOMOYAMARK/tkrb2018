@@ -7,6 +7,7 @@
 static const int pinAssign[S_NUMBER] = {0,1,2,3,4,5,6,7};
 
 ros::NodeHandle  nh;
+//つくろぼのgithub見て修正
 std_msgs::Int16 msgs[8] = {};
 ros::Publisher pub0("ls0", &msgs[0]);
 ros::Publisher pub1("ls1", &msgs[1]);

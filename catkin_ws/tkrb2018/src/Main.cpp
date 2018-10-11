@@ -64,6 +64,7 @@ ros::Publisher motorRInput,motorLInput;
 ros::Publisher collectRequest;//回収用サーボを動かすリクエストを送る。
 ros::Publisher liftRequest;//回収用ステピを動かすリクエストを送る。
 ros::Publisher neckRequest;//回収用ステピを動かすリクエストを送る。
+ros::Publisher airCylinderRequest;//エアシリンダーを動かすリクエストを送る。
 ros::Subscriber webcamOutputSub;//ImageProcessing.pyから返る値を扱う。
 ros::Subscriber testSub,controlerSub;//テスト用。
 ros::Subscriber pulseLSub,pulseRSub;//足回りのパルス読み取り
@@ -115,6 +116,7 @@ int main(int argc, char **argv)
   collectRequest = n.advertise<std_msgs::Int16>("collect_req", 1000);
   liftRequest = n.advertise<std_msgs::Int16>("lift_req", 1000);
   neckRequest = n.advertise<std_msgs::Int16>("neck_req", 1000);
+  airCylinderRequest = n.advertise<std_msgs::Int8>("cylinder_req", 1000);
   webcamOutputSub = n.subscribe("webcam_out", 1000, snapshotCallback);
   testSub = n.subscribe("test",1000,testCallback);
   ros::Subscriber joy = n.subscribe("joy",1000,joyCallback);
@@ -375,10 +377,10 @@ void setTarget(char t, double par){
   case 'a':
     {
       //射出用エアシリンダの伸縮制御　非負整数で射出から収縮まで
-      //
-      std_msgs::Int16 waitSeconds; //暫定でInt16; pythonで設定したほうが楽な値なので
-      willExtend.data = true;
-      airCylinderRequest.publish(willExtend); //存在しない関数
+      //waitSeconds 秒間待機してから射出する
+      std_msgs::Int8 waitMiliSeconds; //暫定でInt16; pythonで設定したほうが楽な値なので
+      waitSeconds.data = 0;
+      airCylinderRequest.publish(waitMiliSeconds); //存在しない関数
       state = WORKING; //撃ちながら動くと安定しない可能性
       break;
     }
