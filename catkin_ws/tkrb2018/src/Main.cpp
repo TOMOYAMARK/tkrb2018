@@ -372,6 +372,15 @@ void setTarget(char t, double par){
     state = IDLE;
     break;
     }
+  case 'a':
+    {
+      //射出用エアシリンダの伸縮制御　trueでのばす、falseで縮める
+      std_msgs::Bool willShoot;
+      willShoot.data = true;
+      airSylinderRequest.publish(willShoot); //存在しない関数
+      state = WORKING; //撃ちながら動くと安定しない可能性
+      break;
+    }
   default:
     return;
   }
