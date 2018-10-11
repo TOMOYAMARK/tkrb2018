@@ -81,20 +81,20 @@ void timer1_controll() {
       motor_controll(i, motor_status[i], &is_high[i], &t[i], motor_low_time[i]);
     }
       t[i]--;
-  } 
+  }
 }
 
 void stepping_motor_init() {
   // stp motor init.p
   int i = 0;
   for (i = 0; i < STEPPING_MOTOR_SUM; i++){
-    pinMode(motor_cw[i], OUTPUT);   
-    pinMode(motor_ccw[i], OUTPUT);   
+    pinMode(motor_cw[i], OUTPUT);
+    pinMode(motor_ccw[i], OUTPUT);
   }
 }
 
 void motorLiftCallback(const std_msgs::Int8& msg) {
-  boolean tf = false;
+  boolean tf = false; //使われていない変数
   if (msg.data>=0){
     tf = true;
   }
