@@ -377,10 +377,10 @@ void setTarget(char t, double par){
   case 'a':
     {
       //射出用エアシリンダの伸縮制御　非負整数で射出から収縮まで
-      //waitSeconds 秒間待機してから射出する
-      std_msgs::Int8 waitMiliSeconds; //暫定でInt16; pythonで設定したほうが楽な値なので
-      waitSeconds.data = 0;
-      airCylinderRequest.publish(waitMiliSeconds); //存在しない関数
+      //waitMiliseconds 秒間待機してから射出する
+      std_msgs::Int8 waitMiliMiliseconds; //暫定でInt16; pythonで設定したほうが楽な値なので
+      waitMiliseconds.data = 0;
+      airCylinderRequest.publish(waitMiliMiliseconds); //存在しない関数
       state = WORKING; //撃ちながら動くと安定しない可能性
       break;
     }
