@@ -2,12 +2,23 @@
 
 
 #include <ros.h>
+#include <std_msgs/Int8.h>
 #include <std_msgs/Int16.h>
 #include <Servo.h>
 
 #define CLOSED_ANG 0
 #define OPENED_ANG 180
 
+// エアシリンダ
+//ピンアサイン
+#define PUSH_PIN 42
+#define PULL_PIN 40
+//PUSH_PINがHIGHになってから伸び切るまでの時間(ミリ秒)
+//delayに突っ込む
+#define PUSH_TIME 5000
+//ピンの変更に必要な間隔（念の為）
+//狭めていっていいはず
+#define PUSHPULL_PINCHANGE_DELAY 20
 
 // stepping motor
 #define STP_CW 28
@@ -33,6 +44,9 @@ Servo neck_servo_l,neck_servo_r;
 ros::NodeHandle nh;
 void handWriteSync(int ang);//
 void neckWriteSync(int ang);//tougou yotei
+//エアシリンダ
+void cylinderCallback(const std_msgs::Int8& msg);
+void cylinder_init();//エアシリンダ関連の初期化
 
 void collectCallback(const std_msgs::Int16& msg) {
   handWriteSync(msg.data);
@@ -88,16 +102,24 @@ void timer1_controll() {
       motor_controll(i, motor_status[i], &is_high[i], &t[i], motor_low_time[i]);
     }
       t[i]--;
-  } 
+  }
 }
 
 void stepping_motor_init() {
   // stp motor init.p
   int i = 0;
   for (i = 0; i < STEPPING_MOTOR_SUM; i++){
-    pinMode(motor_cw[i], OUTPUT);   
-    pinMode(motor_ccw[i], OUTPUT);   
+    pinMode(motor_cw[i], OUTPUT);
+    pinMode(motor_ccw[i], OUTPUT);
   }
+}
+
+void cylinder_init() {
+  pinMode(PUSH_PIN, OUTPUT);
+  pinMode(PULL_PIN, OUTPUT);
+  //エアシリンダに微妙に空気が残ってても最初に勝手に戻してくれるやつ
+  digitalWrite(PULL_PIN, HIGH);
+  digitalWrite(PUSH_PIN, LOW);
 }
 
 void motorLiftCallback(const std_msgs::Int16& msg) {
@@ -109,9 +131,23 @@ void motorLiftCallback(const std_msgs::Int16& msg) {
   motor_set_speed(0, tf, 100);
 }
 
+void cylinderCallback(const std_msgs::Int8& msg) {
+  if (msg.data>=0) { //待機時間(ミリ秒)
+    delay(msg.data);
+    digitalWrite(PULL_PIN, LOW);
+    delay(PUSHPULL_PINCHANGE_DELAY);
+    digitalWrite(PUSH_PIN, HIGH);
+    delay(PUSH_TIME);
+    digitalWrite(PUSH_PIN, LOW);
+    delay(PUSHPULL_PINCHANGE_DELAY);
+    digitalWrite(PULL_PIN, HIGH);
+  }
+}
+
 ros::Subscriber<std_msgs::Int16> collect_sub("collect_req",collectCallback);
 ros::Subscriber<std_msgs::Int16> lift_sub("lift_req",motorLiftCallback);
 ros::Subscriber<std_msgs::Int16> neck_sub("neck_req",neckCallback);
+ros::Subscriber<std_msgs::Int8> cylinder_sub("cylinder_req", cylinderCallback);
 
 void handWriteSync(int ang){//x->collect part angle 0->close 180->open
   //move servos opposite each other with sync
@@ -135,8 +171,10 @@ void setup() {
   nh.subscribe(collect_sub);
   nh.subscribe(neck_sub);
   nh.subscribe(lift_sub);
+  nh.subscribe(cylinder_sub);
 
   stepping_motor_init();
+  cylinder_init();
 }
 
 
