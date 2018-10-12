@@ -33,5 +33,4 @@ void loop()
     pub[i].publish(&msgs[i]);
   }
   nh.spinOnce();
-  delay(100);
 }

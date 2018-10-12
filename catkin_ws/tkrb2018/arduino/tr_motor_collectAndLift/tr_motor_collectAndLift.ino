@@ -21,8 +21,8 @@
 #define PUSHPULL_PINCHANGE_DELAY 20
 
 // stepping motor
-#define STP_CW 28
-#define STP_CCW 30
+#define STP_CW 24
+#define STP_CCW 22
 #define STEPPING_MOTOR_SUM 1
 #define STEP 0.1
 #define LIFT_PW 60
