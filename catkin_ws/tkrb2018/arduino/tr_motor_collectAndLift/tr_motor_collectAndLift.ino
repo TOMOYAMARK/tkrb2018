@@ -11,11 +11,11 @@
 
 // エアシリンダ
 //ピンアサイン
-#define PUSH_PIN 1
-#define PULL_PIN 2
+#define PUSH_PIN 42
+#define PULL_PIN 40
 //PUSH_PINがHIGHになってから伸び切るまでの時間(ミリ秒)
 //delayに突っ込む
-#define PUSH_TIME 100
+#define PUSH_TIME 5000
 //ピンの変更に必要な間隔（念の為）
 //狭めていっていいはず
 #define PUSHPULL_PINCHANGE_DELAY 20
@@ -46,7 +46,7 @@ void handWriteSync(int ang);//
 void neckWriteSync(int ang);//tougou yotei
 //エアシリンダ
 void cylinderCallback(const std_msgs::Int8& msg);
-void initializeCylinder();//エアシリンダ関連の初期化
+void cylinder_init();//エアシリンダ関連の初期化
 
 void collectCallback(const std_msgs::Int16& msg) {
   handWriteSync(msg.data);
@@ -119,6 +119,7 @@ void cylinder_init() {
   pinMode(PULL_PIN, OUTPUT);
   //エアシリンダに微妙に空気が残ってても最初に勝手に戻してくれるやつ
   digitalWrite(PULL_PIN, HIGH);
+  digitalWrite(PUSH_PIN, LOW);
 }
 
 void motorLiftCallback(const std_msgs::Int16& msg) {
@@ -170,8 +171,10 @@ void setup() {
   nh.subscribe(collect_sub);
   nh.subscribe(neck_sub);
   nh.subscribe(lift_sub);
+  nh.subscribe(cylinder_sub);
 
   stepping_motor_init();
+  cylinder_init();
 }
 
 
