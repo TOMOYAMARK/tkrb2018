@@ -12,7 +12,7 @@
 // エアシリンダ
 //ピンアサイン
 #define PUSH_PIN 42
-#define PULL_PIN 40
+#define PULL_PIN 44
 //PUSH_PINがHIGHになってから伸び切るまでの時間(ミリ秒)
 //delayに突っ込む
 #define PUSH_TIME 5000
@@ -40,6 +40,7 @@ volatile long pulse_count[STEPPING_MOTOR_SUM] = {0};
 
 Servo hand_servo_l,hand_servo_r;
 Servo neck_servo_l,neck_servo_r;
+int neckPosition = 0;
 
 ros::NodeHandle nh;
 void handWriteSync(int ang);//
@@ -154,10 +155,25 @@ void handWriteSync(int ang){//x->collect part angle 0->close 180->open
   hand_servo_l.write(ang);
   hand_servo_r.write(180-ang);
 }
-void neckWriteSync(int ang){//x->collect part angle 0->close 180->open
-  //move servos opposite each other with sync
-  neck_servo_l.write(ang);
-  neck_servo_r.write(180-ang);
+void neckWriteSync(int ang){
+  int th;
+
+  if(neckPosition <= ang){
+    for (th = neckPosition; th <= ang; th += 1) { // goes from 0 degrees to 180 degrees
+      // in steps of 1 degree
+      neck_servo_l.write(th);              // tell servo to go to position in variable 'pos'
+      neck_servo_r.write(th);
+      delay(15);
+    }
+  }else if(neckPosition > ang){
+    for (th = neckPosition; th >= ang; th -= 1) { // goes from 0 degrees to 180 degrees
+      // in steps of 1 degree
+      neck_servo_l.write(th);              // tell servo to go to position in variable 'pos'
+      neck_servo_r.write(th);
+      delay(15);
+    }
+  }
+  neckPosition = ang;//save angle in order to sync servos
 }
 
 void setup() {
