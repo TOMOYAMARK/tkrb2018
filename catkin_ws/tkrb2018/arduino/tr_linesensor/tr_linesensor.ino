@@ -1,17 +1,10 @@
-#include <stdio.h>
-#include <stdlib.h>
-
 #include <ros.h>
-#include <std_msgs/Int32.h>
 #include <std_msgs/Int32MultiArray.h>
-
-#include "std_msgs/MultiArrayLayout.h"
-#include "std_msgs/MultiArrayDimension.h"
 
 //フォトダイオードの位置とピンを関連付ける
 //pinAssign[0]が左端
 #define S_NUMBER 8
-static const int pinAssign[S_NUMBER] = {0,1,2,3,4,5,6,7};
+static const int pinAssign[S_NUMBER] = {1,2,3,4,5,6,7,8};
 
 ros::NodeHandle  nh;
 //つくろぼのgithub見て修正
