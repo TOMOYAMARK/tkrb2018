@@ -1,7 +1,9 @@
+#include <stdlib.h>
 #include "ros/ros.h"
 #include "std_msgs/Int8.h"
 #include "std_msgs/Int16.h"
 #include "std_msgs/Int32.h"
+#include "std_msgs/Int32MultiArray.h"
 #include "std_msgs/String.h"
 #include "sensor_msgs/Joy.h"
 #include "std_msgs/MultiArrayLayout.h"
@@ -11,12 +13,13 @@
 #include <stdio.h>
 #include <string>
 #include <iostream>
-using namespace std;
+#include <vector>
 
 int fieldMap[9][10] = {};//マッピング情報。各格子点の状態を要素とする配列。周囲１マス分を余分に確保して0で埋めている。
 #define MAPW 9
 #define MAPH 10
 #define UNIT_SCALE 300//mm。１マスのおおきさ
+#define THRSSS 100
 
 #define PI 3.1416
 
@@ -34,6 +37,7 @@ int selfPosition[2] = {4,9};//初期位置。下図のS
 #define RIGHT 1
 #define BACKWARD 2
 #define LEFT 3
+
 int headingDirection = FORWARD;//最初は前方を向いている。
 
 enum stateParam {STOP = -1,IDLE = 0, WORKING = 1};
@@ -64,10 +68,14 @@ ros::Publisher motorRInput,motorLInput;
 ros::Publisher collectRequest;//回収用サーボを動かすリクエストを送る。
 ros::Publisher liftRequest;//回収用ステピを動かすリクエストを送る。
 ros::Publisher neckRequest;//回収用ステピを動かすリクエストを送る。
-ros::Publisher airCylinderRequest;//エアシリンダーを動かすリクエストを送る。
+ros::Publisher cylinderRequest;//エアシリンダーを動かすリクエストを送る。
 ros::Subscriber webcamOutputSub;//ImageProcessing.pyから返る値を扱う。
 ros::Subscriber testSub,controlerSub;//テスト用。
 ros::Subscriber pulseLSub,pulseRSub;//足回りのパルス読み取り
+ros::Subscriber linesensorSub;
+
+//##TEMP##
+int linesensor[8] = {};
 
 ros::ServiceClient planQueueClient;
 tkrb2018::PlanQueue planQueueSrv;
@@ -84,6 +92,7 @@ void rotateMachine(int d);//回転
 void forbackMachine(int d);//前進後退
 /*---------------------------------------------*/
 
+void lsCallback(const std_msgs::Int32MultiArray::ConstPtr& array);
 
 /*-----------------------コールバック関数------------*/
 void takeSnapShot();
@@ -116,7 +125,7 @@ int main(int argc, char **argv)
   collectRequest = n.advertise<std_msgs::Int16>("collect_req", 1000);
   liftRequest = n.advertise<std_msgs::Int16>("lift_req", 1000);
   neckRequest = n.advertise<std_msgs::Int16>("neck_req", 1000);
-  airCylinderRequest = n.advertise<std_msgs::Int8>("cylinder_req", 1000);
+  cylinderRequest = n.advertise<std_msgs::Int8>("cylinder_req", 1000);
   webcamOutputSub = n.subscribe("webcam_out", 1000, snapshotCallback);
   testSub = n.subscribe("test",1000,testCallback);
   ros::Subscriber joy = n.subscribe("joy",1000,joyCallback);
@@ -124,6 +133,8 @@ int main(int argc, char **argv)
   pulseRSub = n.subscribe("pulse_r",1000,pulseRCallback);
   motorLInput = n.advertise<std_msgs::Int8>("motor_l_input", 1000);
   motorRInput = n.advertise<std_msgs::Int8>("motor_r_input", 1000);
+  //##TEMP##
+  linesensorSub = n.subscribe("ls", 1000, lsCallback);
 
   planQueueClient = n.serviceClient<tkrb2018::PlanQueue>("plan_queue");
 
@@ -140,9 +151,18 @@ int main(int argc, char **argv)
   return 0;
 }
 
+void lsCallback(const std_msgs::Int32MultiArray::ConstPtr& array) {
+  int i = 0;
+  for(std::vector<int>::const_iterator it = array->data.begin(); it != array->data.end(); ++it) {
+    linesensor[i] = *it;
+    i++;
+  }
+}
+
 void pulseLCallback(const std_msgs::Int32::ConstPtr& pL) {
   motorPulseOutput.l = pL->data;
 }
+
 void pulseRCallback(const std_msgs::Int32::ConstPtr& pR) {
   motorPulseOutput.r = pR->data;
 }
@@ -170,9 +190,9 @@ void initializeMap(){
 }
 
 void showMap(){
-  ostringstream oss;
-  string buf;
-  string dir;
+  std::ostringstream oss;
+  std::string buf;
+  std::string dir;
   for(int j=0;j<MAPH;j++){
     for(int i=0;i<MAPW;i++){
       int token = fieldMap[i][j];
@@ -184,7 +204,7 @@ void showMap(){
     }
     ROS_INFO((oss.str()).c_str());
     oss.str("");
-    oss.clear(stringstream::goodbit);// ストリームの状態をクリアする。
+    oss.clear(std::stringstream::goodbit);// ストリームの状態をクリアする。
   }
   ROS_INFO("\t\t selfPos(%d,%d)",selfPosition[0],selfPosition[1]);
   if(headingDirection == FORWARD)dir = "forward";
@@ -298,6 +318,7 @@ void publishMotorInput(){
   motorRInput.publish(motor_input_r);
 }
 
+
 void setTarget(char t, double par){
   switch(t){
   case 'f':
@@ -381,7 +402,7 @@ void setTarget(char t, double par){
     ROS_INFO("launch after %d ms", par);
     std_msgs::Int8 waitDuration; //暫定でInt16; pythonで設定したほうが楽な値なので
     waitDuration.data = par;
-    airCylinderRequest.publish(waitDuration);
+    cylinderRequest.publish(waitDuration);
     state = WORKING; //撃ちながら動くと安定しない可能性
     break;
     }
@@ -400,7 +421,7 @@ bool checkTargetPulse(int val, int target, int ex, bool cw){
     else return 0;
   }else ROS_INFO("FALSE INPUT");
 }
-     
+
 
 bool checkMoveProgress(char t, double par){
   switch(t){
@@ -454,7 +475,7 @@ bool checkMoveProgress(char t, double par){
 }
 
 void getNextTask(char& task, double& param){
-  static string task_buf = "x";
+  static std::string task_buf = "x";
   planQueueSrv.request.request = "Next";//次のタスクを取得
   if (planQueueClient.call(planQueueSrv)){
     task_buf = planQueueSrv.response.task;
@@ -471,19 +492,26 @@ void taskFlowHandler(){
   static double param = 0.0;
 
   if(state == STOP)return;
-  else if(state == IDLE){
+  else if(state == IDLE){ 
     getNextTask(task,param);
     setTarget(task,param);
     ROS_INFO("accepted task");
     ROS_INFO("%c,%f",task,param);
   }else if(state == WORKING){
-    if(checkMoveProgress(task,param) == true){//目標パルスに届いたら
-      ROS_INFO("reached");
+    if(checkMoveProgress(task,param) == true) {//目標パルスに届いたら //こここ
+     ROS_INFO("reached");
       setMotorSpeed(0,0);//マシンを止める。
       state = IDLE;//次の動作を受け付ける。
       moveMachineOnMap(task);
       showMap();
+    } else if (task=='f') {
+      //if(true) //ひだりにまがろう！
+        //setMotorSpeed(DEFAULT_MOTOR_POW*0.5, DEFAULT_MOTOR_POW);
+      //else if(linesensor[3] > THRSSS)
+        //setMotorSpeed(DEFAULT_MOTOR_POW, DEFAULT_MOTOR_POW*0.5);
+      //else setMotorSpeed(DEFAULT_MOTOR_POW, DEFAULT_MOTOR_POW);
     }
+ 
   }
   publishMotorInput();
 }

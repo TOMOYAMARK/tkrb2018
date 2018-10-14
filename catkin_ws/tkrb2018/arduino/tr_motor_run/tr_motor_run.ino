@@ -1,18 +1,21 @@
-/*
-   rosserial::std_msgs::Float64 Test
-   Receives a Float64 input, subtracts 1.0, and publishes it
-*/
+// ____   ___  ____   ___  ____  _   _ ___ ___ 
+//|  _ \ / _ \| __ ) / _ \/ ___|| | | |_ _|_ _|
+//| |_) | | | |  _ \| | | \___ \| |_| || | | | 
+//|  _ <| |_| | |_) | |_| |___) |  _  || | | | 
+//|_| \_\\___/|____/ \___/|____/|_| |_|___|___|
+ 
 
 #include <ros.h>
 #include <std_msgs/Float64.h>
 #include <std_msgs/Int32.h>
+#include <std_msgs/Int32MultiArray.h>
 #include <std_msgs/Int8.h>
 
 #define STEPPING_MOTOR_SUM 3
 #define WHEEL_DIAMETER 200
 #define STEP 1.8
 #define DEFAULTPW 100
-#define ONE_GRID_PULSE 2000 //XXX
+#define ONE_GRID_PULSE 2000
 #define PULSE_FOWARD (WHEEL_DIAMETER * 3.14 * STEP / 360)
 
 ros::NodeHandle nh;
@@ -20,12 +23,11 @@ ros::NodeHandle nh;
 float x;
 
 // stepping motor
-static const int motor_cw[STEPPING_MOTOR_SUM] = {36, 52, 33};//{10, 8, 6};
-static const int motor_ccw[STEPPING_MOTOR_SUM] = {40, 48, 34};//{9, 7, 5};
-//static const int motor_min_low_time[STEPPING_MOTOR_SUM] = {50, 50, 50};
-//static const int motor_max_low_time[STEPPING_MOTOR_SUM] = {200, 200, 200};
+static const int motor_cw[STEPPING_MOTOR_SUM] = {36, 52, 33};
+static const int motor_ccw[STEPPING_MOTOR_SUM] = {40, 48, 34};
 static const int motor_min_low_time[STEPPING_MOTOR_SUM] = {200, 200, 1000};
 static const int motor_max_low_time[STEPPING_MOTOR_SUM] = {1250, 1250, 1000};
+static const int pinAssign[] = {4,5,3,6,2,7,1,8};
 
 /***
    system_arguments.
@@ -75,7 +77,6 @@ void motor_controll(int motor_no, int pulse_pin, bool *current_status, int *t, i
     *t = low_time;
   }
 }
-
 
 void timer1_controll() {
   // time handler
@@ -130,6 +131,12 @@ void messageCb( const std_msgs::Float64& msg) {
   digitalWrite(13, HIGH - digitalRead(13)); // blink the led
 }
 
+
+//ラインセンサの値を直接publishするやつ
+long linesensor_value[8] = {};
+std_msgs::Int32MultiArray msgs;
+ros::Publisher linesensor_publisher("linesensor_value", &msgs);
+
 std_msgs::Int32 pulse0;
 std_msgs::Int32 pulse1;
 ros::Subscriber<std_msgs::Int8> motorL_sub("motor_l_input", motorLCB);
@@ -145,6 +152,7 @@ void setup()
   nh.subscribe(motorR_sub);
   nh.advertise(pulse0_pub);
   nh.advertise(pulse1_pub);
+  nh.advertise(linesensor_publisher);
 
   stepping_motor_init();
 }
@@ -154,14 +162,19 @@ int count = 0;
 void loop()
 {
   timer1_controll();
-
   if (count > 10000) {
     pulse0.data = pulse_count[0];
     pulse1.data = pulse_count[1];
     pulse0_pub.publish(&pulse0);
     pulse1_pub.publish(&pulse1);
     count = 0;
-  }
+    msgs.data_length=8;
+    for(int i=0; i<8; i++) {
+      linesensor_value[i] = analogRead(pinAssign[i]);
+    }
+    msgs.data = linesensor_value;
+    linesensor_publisher.publish(&msgs);
+ }
   delayMicroseconds(1);
   count++;
   nh.spinOnce();

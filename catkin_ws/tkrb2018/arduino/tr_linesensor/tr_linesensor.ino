@@ -1,29 +1,29 @@
 #include <ros.h>
-#include <std_msgs/Int16.h>
-#include "std_msgs/MultiArrayLayout.h"
-#include "std_msgs/MultiArrayDimension.h"
-#include "std_msgs/Int16MultiArray.h"
+#include <std_msgs/Int32MultiArray.h>
 
 //フォトダイオードの位置とピンを関連付ける
 //pinAssign[0]が左端
-#define S_NUMBER 8
-static const int pinAssign[S_NUMBER] = {0,1,2,3,4,5,6,7};
+static const int pinAssign[] = {4,5,3,6,2,7,1,8};
 
 ros::NodeHandle  nh;
 //つくろぼのgithub見て修正
-std_msgs::Int16 vals[8];
-ros::Publisher sensor_pub;
+std_msgs::Int32MultiArray msgs;
+ros::Publisher pub("ls", &msgs);
+long ls[8] = {};
 
 void setup()
 {
   nh.initNode();
-  sensornh.advertise(sensor_pub);
- 
+  nh.advertise(pub);
 }
 
 void loop()
 {
-  sensor_pub.publish(vals);
+  msgs.data_length=8;
+  for(int i=0;i<8;i++){
+    ls[i] = analogRead(pinAssign[i]);
+  }
+  msgs.data = ls;
+  pub.publish(&msgs);
   nh.spinOnce();
-  delay(100);
 }
