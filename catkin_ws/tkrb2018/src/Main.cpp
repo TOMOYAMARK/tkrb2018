@@ -19,6 +19,7 @@ int fieldMap[9][10] = {};//マッピング情報。各格子点の状態を要�
 #define MAPW 9
 #define MAPH 10
 #define UNIT_SCALE 300//mm。１マスのおおきさ
+#define THRSSS 100
 
 #define PI 3.1416
 
@@ -503,11 +504,13 @@ void taskFlowHandler(){
       state = IDLE;//次の動作を受け付ける。
       moveMachineOnMap(task);
       showMap();
+    } else if (task=='f') {
+      //if(true) //ひだりにまがろう！
+        //setMotorSpeed(DEFAULT_MOTOR_POW*0.5, DEFAULT_MOTOR_POW);
+      //else if(linesensor[3] > THRSSS)
+        //setMotorSpeed(DEFAULT_MOTOR_POW, DEFAULT_MOTOR_POW*0.5);
+      //else setMotorSpeed(DEFAULT_MOTOR_POW, DEFAULT_MOTOR_POW);
     }
-    //if(linesensor[3] < THRSSS) //ひだりにまがろう！
-    //  setMotorSpeed(DEFAULT_MOTOR_POW*0.75, DEFAULT_MOTOR_POW);
-    //else if(linesensor[4] < THRSSS)
-    //  setMotorSpeed(DEFAULT_MOTOR_POW, DEFAULT_MOTOR_POW*0.75);
  
   }
   publishMotorInput();

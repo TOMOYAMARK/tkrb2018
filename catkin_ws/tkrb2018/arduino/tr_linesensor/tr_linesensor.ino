@@ -3,8 +3,7 @@
 
 //フォトダイオードの位置とピンを関連付ける
 //pinAssign[0]が左端
-#define S_NUMBER 8
-static const int pinAssign[S_NUMBER] = {1,2,3,4,5,6,7,8};
+static const int pinAssign[] = {4,5,3,6,2,7,1,8};
 
 ros::NodeHandle  nh;
 //つくろぼのgithub見て修正
