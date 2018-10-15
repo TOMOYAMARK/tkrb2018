@@ -504,12 +504,6 @@ void taskFlowHandler(){
       state = IDLE;//次の動作を受け付ける。
       moveMachineOnMap(task);
       showMap();
-    } else if (task=='f') {
-      //if(true) //ひだりにまがろう！
-        //setMotorSpeed(DEFAULT_MOTOR_POW*0.5, DEFAULT_MOTOR_POW);
-      //else if(linesensor[3] > THRSSS)
-        //setMotorSpeed(DEFAULT_MOTOR_POW, DEFAULT_MOTOR_POW*0.5);
-      //else setMotorSpeed(DEFAULT_MOTOR_POW, DEFAULT_MOTOR_POW);
     }
  
   }
