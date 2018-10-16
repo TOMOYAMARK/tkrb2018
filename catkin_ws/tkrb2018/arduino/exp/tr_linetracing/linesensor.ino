@@ -56,7 +56,7 @@ bool getLinesensorColor(int index) {
 void updateLinesensorValue() {
     for(int i=0; i<SENSOR_SUM; i++) {
         linesensorRawValue[i] = analogRead(linesensorPinAssign[i]);
-        linesensorValue[i] = linesensorRawValue[i] < linesensorThreshold;
+        linesensorValue[i] = linesensorRawValue[i] < linesensorThreshold[i];
     }
 }
 

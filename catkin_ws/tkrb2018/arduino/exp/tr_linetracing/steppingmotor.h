@@ -1,7 +1,9 @@
-typedef struct steppingMotorPinAssign {
+#ifndef STEPPINGMOTOR_H
+#define STEPPINGMOTOR_H
+struct steppingMotorPinAssign {
     int cw;
     int ccw;
-}
+};
 
 class SteppingMotor {
     public:
@@ -15,5 +17,6 @@ class SteppingMotor {
     private:
         int step; //resetせずに250マス進むとオーバーフローするよ！
         float stepAngle;
-        steppingMotorPin pin;
-}
+        steppingMotorPinAssign pin;
+};
+#endif
