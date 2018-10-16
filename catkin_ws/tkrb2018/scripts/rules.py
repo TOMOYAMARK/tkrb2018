@@ -1,3 +1,4 @@
+
 ###clockwise###
 F = 0
 R = 1
@@ -102,6 +103,7 @@ shootingDir = [R,L]
 task = 's'
 param = 0
 
+##communication variables##
 def move(dir,posbuf,hbuf):
     global ballHandling,haveToShoot
     if(dir == F):
@@ -143,7 +145,7 @@ def cvtHeading(dir):
     if(dir == B):return '↓'
     if(dir == L):return '←'
 
-def look():
+def look():#ここにSnapShotの結果（1マス先の情報を当てはめる）
     if(heading[0] == F):
         mask[pos[1]-1][pos[0]] = 1
         return map[pos[1]-1][pos[0]]
@@ -331,7 +333,7 @@ def searchAlgorithmEx():
     if(haveToShoot == False):
         unknownPlan.pop(0)
         if(task == 'f'):
-            if(look() == 1):
+            if(look() == 1):#PSDの情報をみて１マス先に障害物があるとき
                 posIm = pos.copy()
                 headingIm = heading.copy()
                 move(F,posIm,headingIm)
