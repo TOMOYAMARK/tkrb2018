@@ -2,28 +2,35 @@
 # coding:utf-8
 from tkrb2018.srv import *
 import rospy
+import rules
 
-first = 0
+FIRST = 0
+frontier = False #未知領域探索モード　⇛　True
 
 #"Next"に対応
 #キューの処理、例外は's'(STOP)にする
 #arduino側の調整
 
 plan = [
-    ['f',4]
+    ['c',0],
+    ['x',0]
 ]
 
 
 def planQueueHandler(req):
+    global plan,frontier
     resp = PlanQueueResponse()
 
-    if(len(plan) == 0):
+    if(plan[0][0] == 'x' or frontier == True):#未知領域探索に突入！
+        frontier = True
+        resp.task,resp.param = rules.spin()
+    elif(len(plan) == 0):
         resp.task = 's'
-	resp.param = 0.0
+        resp.param = 0
     else:
         resp.task = plan[0][0]
         resp.param = plan[0][1]
-    	plan.pop(first)
+    	plan.pop(FIRST)
     
     return resp
 
