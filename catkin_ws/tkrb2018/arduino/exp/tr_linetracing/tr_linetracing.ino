@@ -16,12 +16,10 @@
 #define ONE_GRID_PULSE 2000
 #define PULSE_FOWARD (WHEEL_DIAMETER * 3.1416 * STEP / 360)
 
-
 ros::NodeHandle nh;
 
-
 // ラインセンサ用
-static const int linesensorThreshold = 120;
+static const int linesensorThreshold[SENSOR_SUM] = {70, 70, 70, 70, 70, 70, 70, 70};
 
 // stepping motor 0が左で1が右だぞっ☆
 static const int motor_cw[STEPPING_MOTOR_SUM] = {36, 52};
@@ -154,8 +152,7 @@ void linetrace() {
             motorGain[i]*((float)motorVectorArray[i].speed));
 }
 
-void setup()
-{
+void setup() {
     pinMode(13, OUTPUT);
     nh.initNode();
     nh.subscribe(motorL_sub);
@@ -168,8 +165,7 @@ void setup()
     initDebug();
 }
 
-void loop()
-{
+void loop() {
     timer1_control();
     linetrace();
     linesensorMain();
