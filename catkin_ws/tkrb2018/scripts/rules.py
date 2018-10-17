@@ -95,6 +95,7 @@ goal = [4,5]
 ballHandling = 0
 capacity = 2
 haveToShoot = False
+psd = False
 
 ##シュート時のマシンのステータス
 shootingPoint = [[3,5],[5,5]]
@@ -145,17 +146,21 @@ def cvtHeading(dir):
     if(dir == B):return '↓'
     if(dir == L):return '←'
 
-def look():#ここにSnapShotの結果（1マス先の情報を当てはめる）
+def look():#ここにSnapShot,psdの結果（1マス先の情報を当てはめる）
     if(heading[0] == F):
+        if(psd == True):map[pos[1]-1][pos[0]] = 1
         mask[pos[1]-1][pos[0]] = 1
         return map[pos[1]-1][pos[0]]
     elif(heading[0] == R):
+        if(psd == True):map[pos[1]][pos[0]+1] = 1
         mask[pos[1]][pos[0]+1] = 1
         return map[pos[1]][pos[0]+1]
     elif(heading[0] == B):
+        if(psd == True):map[pos[1]+1][pos[0]] = 1
         mask[pos[1]+1][pos[0]] = 1
         return map[pos[1]+1][pos[0]]
     elif(heading[0] == L):
+        if(psd == True):map[pos[1]][pos[0]-1] = 1
         mask[pos[1]][pos[0]-1] = 1
         return map[pos[1]][pos[0]-1]
 
