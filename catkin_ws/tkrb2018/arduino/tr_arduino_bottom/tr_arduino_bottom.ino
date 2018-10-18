@@ -16,9 +16,7 @@
 #define ONE_GRID_PULSE 2000
 #define PULSE_FOWARD (WHEEL_DIAMETER * 3.1416 * STEP / 360)
 
-
 ros::NodeHandle nh;
-
 
 // ラインセンサ用
 static const int linesensorThreshold = 100;
@@ -168,10 +166,11 @@ void linetrace() {
 }
 
 bool isAnyOnL() {
-    return (getLinesensorColor(0) || getLinesensorColor(1) || getLinesensorColor(2));
+    return (getLinesensorColor(1) || getLinesensorColor(2));
 }
+
 bool isAnyOnR() {
-    return (getLinesensorColor(5) || getLinesensorColor(6) || getLinesensorColor(7));
+    return (getLinesensorColor(5) || getLinesensorColor(6));
 }
 
 void setup()
