@@ -25,8 +25,8 @@ int fieldMap[9][10] = {};//マッピング情報。各格子点の状態を要�
 
 /*------------------モータの情報--------------*/
 #define STEP 1.8
-#define WHEEL_DIAMETER 150//mm-?
-#define MM_PER_PULSE (WHEEL_DIAMETER * PI / 360)*STEP//mm
+#define WHEEL_DIAMETER 150//mm
+//#define MM_PER_PULSE 
 #define DEFAULT_MOTOR_POW 90//max 100(%)
 #define INNER_WHEEL_DISTANCE 380//mmタイヤ間距離
 
@@ -39,6 +39,7 @@ int selfPosition[2] = {4,9};//初期位置。下図のS
 #define LEFT 3
 
 int headingDirection = FORWARD;//最初は前方を向いている。
+double MM_PER_PULSE = (WHEEL_DIAMETER * PI / 360)*STEP;//mm
 
 enum stateParam {STOP = -1,IDLE = 0, WORKING = 1};
 stateParam state = IDLE;//マシンのタスク受付状態
@@ -73,6 +74,7 @@ ros::Subscriber webcamOutputSub;//ImageProcessing.pyから返る値を扱う。
 ros::Subscriber testSub,controlerSub;//テスト用。
 ros::Subscriber pulseLSub,pulseRSub;//足回りのパルス読み取り
 ros::Subscriber linesensorSub;
+bool startButtonPressed = false; //ボタンが押されたらtrue
 
 //##TEMP##
 int linesensor[8] = {};
@@ -295,7 +297,7 @@ void testCallback(const std_msgs::String::ConstPtr& val){
 
 int cvtUnitToPulse(double units){
   double additionalPulse = units * UNIT_SCALE / MM_PER_PULSE;
-  //ROS_INFO("additionalPulse %f",additionalPulse);
+  ROS_INFO("units (%f) * UNIT_SCALE(%d) / MM_PER_PULSE(%d)",units,UNIT_SCALE,MM_PER_PULSE);
   return additionalPulse;
 }
 
@@ -406,6 +408,13 @@ void setTarget(char t, double par){
     state = WORKING; //撃ちながら動くと安定しない可能性
     break;
     }
+  case 's':
+    {
+    //スタート。コントローラの入力待ち（PS4コンの□ボタン）
+    ROS_INFO("ready... (press the button to start)");
+    state = WORKING;
+    break;
+    }
   default:
     return;
   }
@@ -467,6 +476,12 @@ bool checkMoveProgress(char t, double par){
     }
     break;
     }
+  case 's':
+    {
+    //スタート待ち
+    if(startButtonPressed == true)return 1;
+    else return 0;
+    }
   default:
     break;
   }
@@ -517,19 +532,16 @@ void taskFlowHandler(){
 }
 
 void joyCallback(const sensor_msgs::Joy::ConstPtr& joy){
-  if(joy -> buttons[1]){
-    //Controller ボタン２
-    std_msgs::Int16 val;
-    val.data = 180;
-    collectRequest.publish(val);
+  startButtonPressed = false;
+  if(joy -> buttons[0]){
+    //Controller ボタン1 or □ボタン
+    //タスク受付を開始する。
+    startButtonPressed = true;
+  }else if(joy -> buttons[1]){
+    //Controller ボタン2 or ☓ボタン
   }else if(joy -> buttons[2]){
-    //Controller ボタン３
+    //Controller ボタン3 or ○ボタン
   }else if(joy -> buttons[3]){
-    //Controller ボタン４
-  }else if(joy -> buttons[0]){
-    //Controller ボタン１
-    std_msgs::Int16 val;
-    val.data = 0;
-    collectRequest.publish(val);
+    //Controller ボタン4 or △ボタン
   }
 }
