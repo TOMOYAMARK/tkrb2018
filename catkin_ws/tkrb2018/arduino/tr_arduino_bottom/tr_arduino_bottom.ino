@@ -24,7 +24,7 @@ static const int linesensorThreshold = 100;
 // stepping motor 0が左で1が右だぞっ☆
 static const int motor_cw[STEPPING_MOTOR_SUM] = {36, 52};
 static const int motor_ccw[STEPPING_MOTOR_SUM] = {40, 48};
-static const int motor_min_low_time[STEPPING_MOTOR_SUM] = {350, 350};//最初200, 最適100
+static const int motor_min_low_time[STEPPING_MOTOR_SUM] = {100, 100};
 static const int motor_max_low_time[STEPPING_MOTOR_SUM] = {1250, 1250};
 static const float curveMotorGain[2] = {0.5, 0.25}; //0がゆるくカーブ、1がきつくカーブ
 
@@ -113,7 +113,8 @@ void motorLCB(const std_msgs::Int8& msg) {
     int speed = abs(msg.data);
     motorVectorArray[0].forward = tf;
     motorVectorArray[0].speed = speed;
-    motor_set_speed(0, motorVectorArray[0].forward, motorVectorArray[0].speed);
+    
+motor_set_speed(0, motorVectorArray[0].forward, motorVectorArray[0].speed);
 }
 
 void motorRCB(const std_msgs::Int8& msg) {
@@ -204,7 +205,12 @@ void loop()
 
     if (count > 10000) {
         linesensorMain();
-        linetrace();
+        if(motorVectorArray[0].forward == motorVectorArray[1].forward)
+          linetrace();
+        else {
+          motor_set_speed(0,motorVectorArray[0].forward,motorVectorArray[0].speed);
+          motor_set_speed(1,motorVectorArray[1].forward,motorVectorArray[1].speed);
+        }
         pulse0.data = pulse_count[0];
         pulse1.data = pulse_count[1];
         pulse0_pub.publish(&pulse0);
