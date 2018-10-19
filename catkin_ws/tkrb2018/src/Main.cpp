@@ -79,12 +79,12 @@ ros::Publisher collectRequest;//回収用サーボを動かすリクエストを
 ros::Publisher liftRequest;//回収用ステピを動かすリクエストを送る。
 ros::Publisher neckRequest;//回収用ステピを動かすリクエストを送る。
 ros::Publisher cylinderRequest;//エアシリンダーを動かすリクエストを送る。
-ros::Publisher crossCheckRequest;//##TAG_POS##;
+ros::Publisher XcheckRequest;//##TAG_POS##;
 ros::Subscriber webcamOutputSub;//ImageProcessing.pyから返る値を扱う。
 ros::Subscriber testSub,controlerSub;//テスト用。
 ros::Subscriber pulseLSub,pulseRSub;//足回りのパルス読み取り
 bool startButtonPressed = false; //ボタンが押されたらtrue
-ros::Subscriber crossCheckSub;//##TAG_POS##
+ros::Subscriber XcheckSub;//##TAG_POS##
 
 //##TEMP##
 int linesensor[8] = {};
@@ -110,7 +110,7 @@ void takeSnapShot();
 void joyCallback(const sensor_msgs::Joy::ConstPtr& joy);//テスト用
 void pulseRCallback(const std_msgs::Int32::ConstPtr& pR);
 void pulseLCallback(const std_msgs::Int32::ConstPtr& pL);
-void crossCheckCallback(const std_msgs::Int8::ConstPtr& dummy);//交差に到達した(※未実装 り旋回が終了した)場合に呼ばれる
+void XcheckCallback(const std_msgs::Int8::ConstPtr& dummy);//交差に到達した(※未実装 り旋回が終了した)場合に呼ばれる
 /*--------------------------------------------------*/
 
 
@@ -142,10 +142,10 @@ int main(int argc, char **argv)
   ros::Subscriber joy = n.subscribe("joy",1000,joyCallback);
   pulseLSub = n.subscribe("pulse_l",1000,pulseLCallback);
   pulseRSub = n.subscribe("pulse_r",1000,pulseRCallback);
-  crossCheckSub = n.subscribe("xcheck_state", 1000, crossCheckCallback);
+  XcheckSub = n.subscribe("xcheck_state", 1000, XcheckCallback);
   motorLInput = n.advertise<std_msgs::Int8>("motor_l_input", 1000);
   motorRInput = n.advertise<std_msgs::Int8>("motor_r_input", 1000);
-  crossCheckRequest = n.advertise<std_msgs::Int8>("xcheck_req", 1000);//##TAG_CHECK##
+  XcheckRequest = n.advertise<std_msgs::Int8>("xcheck_req", 1000);//##TAG_CHECK##
 
   planQueueClient = n.serviceClient<tkrb2018::PlanQueue>("plan_queue");
 
@@ -163,7 +163,7 @@ int main(int argc, char **argv)
 }
 
 
-void crossCheckCallback(const std_msgs::Int8::ConstPtr& dummy) {
+void XcheckCallback(const std_msgs::Int8::ConstPtr& dummy) {
   //右旋回とか左旋回完了の情報もできれば突っ込みたい
   //Emptyにして旋回は別にすべきか…？
   isMachineAtCross = true;
@@ -336,9 +336,9 @@ void setTarget(char t, double par){
 		   motorPulseOutput.r + cvtUnitToPulse(par)};
     setMotorSpeed(DEFAULT_MOTOR_POW,DEFAULT_MOTOR_POW);
     ROS_INFO("setTargetTo %d",targetPulse.l);
-    std_msgs::Int8 crossCheckDelay;//##TAG_POS##;
-    crossCheckDelay.data = XCHECK_DELAY;
-    crossCheckRequest.publish(crossCheckDelay);
+    std_msgs::Int8 XcheckDelay;//##TAG_POS##;
+    XcheckDelay.data = XCHECK_DELAY;
+    XcheckRequest.publish(XcheckDelay);
     state = WORKING;
     break;
     }
