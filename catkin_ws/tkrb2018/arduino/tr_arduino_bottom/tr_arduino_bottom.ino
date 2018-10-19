@@ -22,8 +22,8 @@ ros::NodeHandle nh;
 static const int linesensorThreshold = 100;
 
 // stepping motor 0が左で1が右だぞっ☆
-static const int motor_cw[STEPPING_MOTOR_SUM] = {36, 52};
-static const int motor_ccw[STEPPING_MOTOR_SUM] = {40, 48};
+static const int motor_cw[STEPPING_MOTOR_SUM] = {40, 48};
+static const int motor_ccw[STEPPING_MOTOR_SUM] = {36, 52};
 static const int motor_min_low_time[STEPPING_MOTOR_SUM] = {200, 200};
 static const int motor_max_low_time[STEPPING_MOTOR_SUM] = {1250, 1250};
 static const float curveMotorGain[2] = {0.5, 0}; //0がゆるくカーブ、1がきつくカーブ

@@ -26,8 +26,9 @@ void initLinesensor() {
 void linesensorMain() {
     updateLinesensorValue();
     //いつか分ける
-    if(!(linesensorCounter > 500)) {
+    if(isLinesensorDebugMode) {//あ
         //送信処理
+        linesensorCounter = 0;
         publishLinesensorValue();
         if(isLinesensorDebugMode)
             sendRawLinesensorValue();
