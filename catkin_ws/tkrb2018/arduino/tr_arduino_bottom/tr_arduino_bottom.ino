@@ -41,6 +41,9 @@ int motor_foward[STEPPING_MOTOR_SUM] = {0, 0};// true is 1, false is -1, stop is
 int motor_low_time[STEPPING_MOTOR_SUM] = {0, 0};
 volatile long pulse_count[STEPPING_MOTOR_SUM] = {0, 0};
 
+int XcheckDelay = -1;//交差チェック用ディレイ
+//-1が通常、0がチェック中、それ以外がディレイ中
+//enumにしたい
 
 void motor_set_speed(int motor_no, boolean foward, int speed) {
     /***
@@ -124,7 +127,9 @@ void motorRCB(const std_msgs::Int8& msg) {
     motor_set_speed(1, motorVectorArray[1].forward, motorVectorArray[1].speed);
 }
 
-
+void startXcheck(const std_msgs::Int8& msg) {
+    XcheckDelay = msg.data;
+}
 
 
 std_msgs::Int32 pulse0;
@@ -133,6 +138,10 @@ ros::Subscriber<std_msgs::Int8> motorL_sub("motor_l_input", motorLCB);
 ros::Subscriber<std_msgs::Int8> motorR_sub("motor_r_input", motorRCB);
 ros::Publisher pulse0_pub ("pulse_l", &pulse0);
 ros::Publisher pulse1_pub ("pulse_r", &pulse1);
+
+std_msgs::Int8 dummyState;
+ros::Subscriber<std_msgs::Int8> XCheckReqReciever("xcheck_req", startXcheck);
+ros::Publisher XStopPublisher("xstop_req", &dummyState);
 
 int count = 0;
 
@@ -164,6 +173,13 @@ bool isAnyOnR() {
     return (getLinesensorColor(5) || getLinesensorColor(6));
 }
 
+void Xcheck() {
+    if(isAnyOnL() && isAnyOnR()) {
+        XStopPublisher.publish(&dummyState);
+        XcheckDelay = -1;
+    }
+}
+
 void setup()
 {
     pinMode(13, OUTPUT);
@@ -176,6 +192,10 @@ void setup()
     stepping_motor_init();
     initLinesensor();
     initDebug();
+
+    dummyState.data = 0;
+    nh.subscribe(XCheckReqReciever);
+    nh.advertise(XStopPublisher);
 }
 
 void loop()
@@ -190,8 +210,14 @@ void loop()
         pulse0_pub.publish(&pulse0);
         pulse1_pub.publish(&pulse1);
 
+        if(XcheckDelay > 0) XcheckDelay --;
+
+        if(XcheckDelay == 0) Xcheck();
+
         count = 0;
     }
+    
+
     count++;
     nh.spinOnce();
 
