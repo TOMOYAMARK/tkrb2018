@@ -22,11 +22,11 @@ ros::NodeHandle nh;
 static const int linesensorThreshold = 100;
 
 // stepping motor 0が左で1が右だぞっ☆
-static const int motor_cw[STEPPING_MOTOR_SUM] = {40, 48};
-static const int motor_ccw[STEPPING_MOTOR_SUM] = {36, 52};
-static const int motor_min_low_time[STEPPING_MOTOR_SUM] = {200, 200};
+static const int motor_cw[STEPPING_MOTOR_SUM] = {36, 52};
+static const int motor_ccw[STEPPING_MOTOR_SUM] = {40, 48};
+static const int motor_min_low_time[STEPPING_MOTOR_SUM] = {350, 350};
 static const int motor_max_low_time[STEPPING_MOTOR_SUM] = {1250, 1250};
-static const float curveMotorGain[2] = {0.5, 0}; //0がゆるくカーブ、1がきつくカーブ
+static const float curveMotorGain[2] = {0.5, 0.25}; //0がゆるくカーブ、1がきつくカーブ
 
 //ステピ用の怪しいやつ モーターに突っ込まれた値を使ってライントレースでほげほげする
 struct { boolean forward; int speed; } motorVectorArray[STEPPING_MOTOR_SUM];
@@ -78,15 +78,6 @@ void motor_control(int motor_no, int pulse_pin, bool *current_status, int *t, in
         *current_status = false;
         *t = low_time;
     }
-}
-
-bool isLOverridden = false; //左モーターのオーバーライド（停止）
-bool isROverridden = false; //右モーターのオーバーライド（停止）
-
-void motorControlOverrider(uint8_t pin, uint8_t state) {
-    if (isLOverridden) digitalWrite(motor_status[0], LOW);
-    else if (isROverridden) digitalWrite(motor_status[1], LOW);
-    else digitalWrite(pin, state);
 }
 
 void timer1_control() {
@@ -191,18 +182,13 @@ void loop()
 {
     timer1_control();
 
-    if (count % 300 == 0) {
+    if (count > 10000) {
         linesensorMain();
         linetrace();
-    }
-    if (count > 10000) {
         pulse0.data = pulse_count[0];
         pulse1.data = pulse_count[1];
         pulse0_pub.publish(&pulse0);
         pulse1_pub.publish(&pulse1);
-        
-        //for(int i=0; i<STEPPING_MOTOR_SUM; i++)
-            //motor_set_speed(i, motorVectorArray[i].forward, motorVectorArray[i].speed);
 
         count = 0;
     }
