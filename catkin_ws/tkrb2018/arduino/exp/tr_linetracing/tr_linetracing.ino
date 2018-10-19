@@ -19,14 +19,14 @@
 ros::NodeHandle nh;
 
 // ラインセンサ用
-static const int linesensorThreshold = 100;
+static const int linesensorThreshold[SENSOR_SUM] = {70, 70, 70, 70, 70, 70, 70, 70};
 
 // stepping motor 0が左で1が右だぞっ☆
 static const int motor_cw[STEPPING_MOTOR_SUM] = {36, 52};
 static const int motor_ccw[STEPPING_MOTOR_SUM] = {40, 48};
-static const int motor_min_low_time[STEPPING_MOTOR_SUM] = {350, 350};
+static const int motor_min_low_time[STEPPING_MOTOR_SUM] = {200, 200};
 static const int motor_max_low_time[STEPPING_MOTOR_SUM] = {1250, 1250};
-static const float curveMotorGain[2] = {0.5, 0.25}; //0がゆるくカーブ、1がきつくカーブ
+static const float curveMotorGain[2] = {0.75, 0.5}; //0がゆるくカーブ、1がきつくカーブ
 
 //ステピ用の怪しいやつ モーターに突っ込まれた値を使ってライントレースでほげほげする
 struct { boolean forward; int speed; } motorVectorArray[STEPPING_MOTOR_SUM];
@@ -110,7 +110,6 @@ void motorLCB(const std_msgs::Int8& msg) {
     int speed = abs(msg.data);
     motorVectorArray[0].forward = tf;
     motorVectorArray[0].speed = speed;
-    motor_set_speed(0, motorVectorArray[0].forward, motorVectorArray[0].speed);
 }
 
 void motorRCB(const std_msgs::Int8& msg) {
@@ -121,7 +120,6 @@ void motorRCB(const std_msgs::Int8& msg) {
     int speed = abs(msg.data);
     motorVectorArray[1].forward = tf;
     motorVectorArray[1].speed = speed;
-    motor_set_speed(1, motorVectorArray[1].forward, motorVectorArray[1].speed);
 }
 
 
@@ -140,15 +138,13 @@ void linetrace() {
     float motorGain[STEPPING_MOTOR_SUM] = {1, 1}; //通常は入力の100%で動作する
     if (getLinesensorColor(3) && getLinesensorColor(4)) {
         //do nothing
-    } else if (isAnyOnL() && isAnyOnR()) {
-        //do nothing
     } else if (!getLinesensorColor(3) && getLinesensorColor(4)) {
         motorGain[1] = curveMotorGain[0];
     } else if (getLinesensorColor(3) && !getLinesensorColor(4)) {
         motorGain[0] = curveMotorGain[0];
-    } else if (isAnyOnL()) {
+    } else if (getLinesensorColor(0) || getLinesensorColor(1) || getLinesensorColor(2)) {
         motorGain[0] = curveMotorGain[1];
-    } else if (isAnyOnR()) {
+    } else if (getLinesensorColor(5) || getLinesensorColor(6) || getLinesensorColor(7)) {
         motorGain[1] = curveMotorGain[1];
     }
     for(int i=0; i<STEPPING_MOTOR_SUM; i++)
@@ -156,16 +152,7 @@ void linetrace() {
             motorGain[i]*((float)motorVectorArray[i].speed));
 }
 
-bool isAnyOnL() {
-    return (getLinesensorColor(1) || getLinesensorColor(2));
-}
-
-bool isAnyOnR() {
-    return (getLinesensorColor(5) || getLinesensorColor(6));
-}
-
-void setup()
-{
+void setup() {
     pinMode(13, OUTPUT);
     nh.initNode();
     nh.subscribe(motorL_sub);
@@ -178,22 +165,23 @@ void setup()
     initDebug();
 }
 
-void loop()
-{
+void loop() {
     timer1_control();
+    linetrace();
+    linesensorMain();
 
     if (count > 10000) {
-        linesensorMain();
-        linetrace();
         pulse0.data = pulse_count[0];
         pulse1.data = pulse_count[1];
         pulse0_pub.publish(&pulse0);
         pulse1_pub.publish(&pulse1);
-
+        
         count = 0;
     }
     count++;
     nh.spinOnce();
+    for(int i=0; i<STEPPING_MOTOR_SUM; i++)
+        motor_set_speed(i, motorVectorArray[i].forward, motorVectorArray[i].speed);
 
     delayMicroseconds(1);
 }

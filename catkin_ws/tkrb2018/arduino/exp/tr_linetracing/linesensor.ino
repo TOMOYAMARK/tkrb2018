@@ -26,9 +26,8 @@ void initLinesensor() {
 void linesensorMain() {
     updateLinesensorValue();
     //いつか分ける
-    if(isLinesensorDebugMode) {//あ
+    if(!(linesensorCounter > 500)) {
         //送信処理
-        linesensorCounter = 0;
         publishLinesensorValue();
         if(isLinesensorDebugMode)
             sendRawLinesensorValue();
@@ -45,7 +44,7 @@ void publishLinesensorValue() {
     linesensorPublisher.publish(&linesensorMessage);
 }
 
-//配列をexternにするのが難しかった
+//配列をexternにするのが難しかった…
 //boolにしたラインセンサの値
 bool getLinesensorColor(int index) {
     if(index < SENSOR_SUM)
@@ -57,7 +56,7 @@ bool getLinesensorColor(int index) {
 void updateLinesensorValue() {
     for(int i=0; i<SENSOR_SUM; i++) {
         linesensorRawValue[i] = analogRead(linesensorPinAssign[i]);
-        linesensorValue[i] = linesensorRawValue[i] < linesensorThreshold;
+        linesensorValue[i] = linesensorRawValue[i] < linesensorThreshold[i];
     }
 }
 
@@ -68,6 +67,7 @@ ros::Publisher linesensorDebugPublisher("DEBUG_LINESENSOR_VALUE", &debugLSArray)
 void initDebug() {
     nh.advertise(linesensorDebugPublisher);
     debugLSArray.data_length = SENSOR_SUM;
+    isLinesensorDebugMode = true;
 }
 
 //デバッグ用の送信やつ
