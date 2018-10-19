@@ -5,25 +5,50 @@ import rospy
 
 first = 0
 
-#"Next"に対応
-#キューの処理
-#arduino側の調整
 
+###planに ["shoot"]追加⇛決まった以下のシュート動作をplanに挿入
+shoot = [
+    ['z',-120],
+    ['p',5],
+    ['n',45],
+    ['c',180],
+    ['p',1],
+    ['a',0],
+    ['p',2],
+    ['c',0],
+    ['n',60],
+    ['z',120],
+    ['p',5]
+    ]
 
 #'s'⇛スタートボタン待ち。コントローラの入力を想定。ボタン1 or □ボタン入力までWORKING
-#ラズパイでスタートしやすい用に念の為追加（vncでノード起動でもいいけど一応）
+#'f','r','b','l'
+#'z'⇛回収部持ち上げステピ
+#'n'⇛首サーボ
+#'c'⇛回収サーボ
+#'a'⇛エアー出力
+#["shoot"]⇛シュート動作
+
 plan = [
-    ['s',0],
-    ['f',4]
+    ['p',3],
+    ["shoot"]
 ]
 
 
 def planQueueHandler(req):
+    global plan
     resp = PlanQueueResponse()
+
+    if(plan[0][0] == "shoot"):
+        print("I have to shoot")
+        plan.pop(first)
+        plan = shoot + plan
+    pass
 
     if(len(plan) == 0):
         resp.task = 's'
 	resp.param = 0.0
+    
     else:
         resp.task = plan[0][0]
         resp.param = plan[0][1]
