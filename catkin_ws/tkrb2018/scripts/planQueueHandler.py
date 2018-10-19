@@ -10,8 +10,8 @@ first = 0
 shoot = [
     ['z',-120],
     ['p',5],
-    ['n',45],
-    ['c',180],
+    ['n',60],
+    ['c',90],
     ['p',1],
     ['a',0],
     ['p',2],
@@ -24,14 +24,39 @@ shoot = [
 #'s'⇛スタートボタン待ち。コントローラの入力を想定。ボタン1 or □ボタン入力までWORKING
 #'f','r','b','l'
 #'z'⇛回収部持ち上げステピ
-#'n'⇛首サーボ
-#'c'⇛回収サーボ
+#'n'⇛首サーボ⇛ 0->upmax 180->downmax 30->initialPosition
+#'c'⇛回収サーボ⇛ 0->open 90->close
 #'a'⇛エアー出力
 #["shoot"]⇛シュート動作
 
-plan = [
-    ['p',3],
+mplan = [
+    ['c',90],
+    ['n',30],
+    ['p',1],
+    ['f',1],
+    ['r',90],
+    ['f',1],
+    ['l',90],
+    ['f',1],
+    ['r',90],
+    ['f',2],
+    ['l',90],
+    ['f',1],
     ["shoot"]
+]
+
+plan = [
+    ['n',25],
+    ['p',0.5],
+    ['c',0],
+    ['p',1],
+    ['f',1],
+    ['c',90],
+    ['f',1],
+    ['c',0],
+    ['p',1],
+    ['c',90],
+    ['f',1]
 ]
 
 
@@ -52,6 +77,7 @@ def planQueueHandler(req):
     else:
         resp.task = plan[0][0]
         resp.param = plan[0][1]
+	if(resp.task == 'f' or resp.task == 'b'):resp.param += 0.2
     	plan.pop(first)
     
     return resp

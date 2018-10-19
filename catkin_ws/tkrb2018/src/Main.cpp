@@ -18,17 +18,18 @@
 int fieldMap[9][10] = {};//マッピング情報。各格子点の状態を要素とする配列。周囲１マス分を余分に確保して0で埋めている。
 #define MAPW 9
 #define MAPH 10
-#define UNIT_SCALE 300//mm。１マスのおおきさ
+//#define UNIT_SCALE 300//mm。１マスのおおきさ
 #define THRSSS 100
 
-#define PI 3.1416
+double UNIT_SCALE = 300;
+//#define PI 3.1416
 
 /*------------------モータの情報--------------*/
-#define STEP 1.8
-#define WHEEL_DIAMETER 150//mm
+//#define STEP 1.8
+//#define WHEEL_DIAMETER 150//mm
 //#define MM_PER_PULSE 
-#define DEFAULT_MOTOR_POW 90//max 100(%)
-#define INNER_WHEEL_DISTANCE 380//mmタイヤ間距離
+#define DEFAULT_MOTOR_POW 40//max 100(%)
+#define INNER_WHEEL_DISTANCE 330//mmタイヤ間距離
 
 /*-------------------機体の情報-----------------*/
 int selfPosition[2] = {4,9};//初期位置。下図のS
@@ -38,8 +39,11 @@ int selfPosition[2] = {4,9};//初期位置。下図のS
 #define BACKWARD 2
 #define LEFT 3
 
+double WHEEL_DIAMETER = 150;
+double STEP = 1.8;
+double PI = 3.141;
 int headingDirection = FORWARD;//最初は前方を向いている。
-double MM_PER_PULSE = (WHEEL_DIAMETER * PI / 360)*STEP;//mm
+double MM_PER_PULSE = 2.35575;//mm
 
 enum stateParam {STOP = -1,IDLE = 0, WORKING = 1};
 stateParam state = IDLE;//マシンのタスク受付状態
@@ -64,13 +68,11 @@ std_msgs::Int8 motor_input_l,motor_input_r;//パブリッシュする変数
 
 
 std_msgs::Int8 snapshotReq;//Publishする変数。
-ros::Publisher webcamRequestPub;//ImageProcessing.pyに画像処理を依頼する。
 ros::Publisher motorRInput,motorLInput;
 ros::Publisher collectRequest;//回収用サーボを動かすリクエストを送る。
 ros::Publisher liftRequest;//回収用ステピを動かすリクエストを送る。
 ros::Publisher neckRequest;//回収用ステピを動かすリクエストを送る。
 ros::Publisher cylinderRequest;//エアシリンダーを動かすリクエストを送る。
-ros::Subscriber webcamOutputSub;//ImageProcessing.pyから返る値を扱う。
 ros::Subscriber testSub,controlerSub;//テスト用。
 ros::Subscriber pulseLSub,pulseRSub;//足回りのパルス読み取り
 ros::Subscriber linesensorSub;
@@ -123,12 +125,10 @@ int main(int argc, char **argv)
   snapshotReq.data = 1;//initVar
   initializeMap();
   showMap();
-  webcamRequestPub = n.advertise<std_msgs::Int8>("snapshot_req", 1000);
   collectRequest = n.advertise<std_msgs::Int16>("collect_req", 1000);
   liftRequest = n.advertise<std_msgs::Int16>("lift_req", 1000);
   neckRequest = n.advertise<std_msgs::Int16>("neck_req", 1000);
   cylinderRequest = n.advertise<std_msgs::Int8>("cylinder_req", 1000);
-  webcamOutputSub = n.subscribe("webcam_out", 1000, snapshotCallback);
   testSub = n.subscribe("test",1000,testCallback);
   ros::Subscriber joy = n.subscribe("joy",1000,joyCallback);
   pulseLSub = n.subscribe("pulse_l",1000,pulseLCallback);
@@ -276,10 +276,6 @@ void forbackMachine(int d){// d=FORWARD or BACKWARD 前進、後退を反映
   }
 }
 
-void takeSnapShot(){
-  webcamRequestPub.publish(snapshotReq);
-}
-
 
 void testCallback(const std_msgs::String::ConstPtr& val){
   if(val->data == "f" || val->data == "F"){
@@ -296,8 +292,10 @@ void testCallback(const std_msgs::String::ConstPtr& val){
 
 
 int cvtUnitToPulse(double units){
-  double additionalPulse = units * UNIT_SCALE / MM_PER_PULSE;
-  ROS_INFO("units (%f) * UNIT_SCALE(%d) / MM_PER_PULSE(%d)",units,UNIT_SCALE,MM_PER_PULSE);
+  double additionalPulse = units * UNIT_SCALE / 2.35575;
+  ROS_INFO("units (%f)",units);
+  ROS_INFO("UNIT_SCALE(%f)",UNIT_SCALE);
+  ROS_INFO("MM_PER_PULSE(%lf)",MM_PER_PULSE);
   return additionalPulse;
 }
 
