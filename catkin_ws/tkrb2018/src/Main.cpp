@@ -19,7 +19,6 @@ int fieldMap[9][10] = {};//マッピング情報。各格子点の状態を要�
 #define MAPW 9
 #define MAPH 10
 #define UNIT_SCALE 300//mm。１マスのおおきさ
-#define THRSSS 100
 
 #define PI 3.1416
 
@@ -44,6 +43,13 @@ enum stateParam {STOP = -1,IDLE = 0, WORKING = 1};
 stateParam state = IDLE;//マシンのタスク受付状態
 /*----------------------------------------------*/
 
+/*-------------------ラインセンサ-----------------*/
+#define XCHECK_DELAY 50
+//##TAG_CHECK##
+//交差に入ったかチェックするためのフラグ
+//実際のディレイは XCHECK_DELAY*10 ms より遅い
+//できればディレイなしてarduino側で調整したい
+/*----------------------------------------------*/
 
 struct leftRightStr{//足回り駆動用で使う左右の変数
   int l;
@@ -69,10 +75,12 @@ ros::Publisher collectRequest;//回収用サーボを動かすリクエストを
 ros::Publisher liftRequest;//回収用ステピを動かすリクエストを送る。
 ros::Publisher neckRequest;//回収用ステピを動かすリクエストを送る。
 ros::Publisher cylinderRequest;//エアシリンダーを動かすリクエストを送る。
+ros::Publisher crossCheckRequest;//##TAG_POS##;
 ros::Subscriber webcamOutputSub;//ImageProcessing.pyから返る値を扱う。
 ros::Subscriber testSub,controlerSub;//テスト用。
 ros::Subscriber pulseLSub,pulseRSub;//足回りのパルス読み取り
-ros::Subscriber linesensorSub;
+ros::Subscriber crossCheckSub;//##TAG_POS##
+
 
 //##TEMP##
 int linesensor[8] = {};
@@ -90,16 +98,15 @@ void testCallback(const std_msgs::String::ConstPtr& val);
 void moveMachineOnMap(char mv);//下記の関数を用いてマシンを移動する。
 void rotateMachine(int d);//回転
 void forbackMachine(int d);//前進後退
-void linesensorCallback(const std_msgs::Int8::ConstPtr& state);//交差に到達したり旋回が終了した場合に呼ばれる
 /*---------------------------------------------*/
 
-void lsCallback(const std_msgs::Int32MultiArray::ConstPtr& array);
 
 /*-----------------------コールバック関数------------*/
 void takeSnapShot();
 void joyCallback(const sensor_msgs::Joy::ConstPtr& joy);//テスト用
 void pulseRCallback(const std_msgs::Int32::ConstPtr& pR);
 void pulseLCallback(const std_msgs::Int32::ConstPtr& pL);
+void crossCheckCallback(const std_msgs::Int8::ConstPtr& dummy);//交差に到達した(※未実装 り旋回が終了した)場合に呼ばれる
 /*--------------------------------------------------*/
 
 
@@ -114,7 +121,7 @@ void taskFlowHandler();//taskキューのメイン処理
 
 double startTime, endTime;//時間計測用変数
 
-bool didMachineReachCross = false;
+bool isMachineAtCross = false;
 
 int main(int argc, char **argv)
 {
@@ -133,10 +140,10 @@ int main(int argc, char **argv)
   ros::Subscriber joy = n.subscribe("joy",1000,joyCallback);
   pulseLSub = n.subscribe("pulse_l",1000,pulseLCallback);
   pulseRSub = n.subscribe("pulse_r",1000,pulseRCallback);
+  crossCheckSub = n.subscribe("xcheck_state", 1000, crossCheckCallback);
   motorLInput = n.advertise<std_msgs::Int8>("motor_l_input", 1000);
   motorRInput = n.advertise<std_msgs::Int8>("motor_r_input", 1000);
-  //##TEMP##
-  linesensorSub = n.subscribe("ls", 1000, lsCallback);
+  crossCheckRequest = n.advertise<std_msgs::Int8>("xcheck_req", 1000);//##TAG_CHECK##
 
   planQueueClient = n.serviceClient<tkrb2018::PlanQueue>("plan_queue");
 
@@ -153,12 +160,11 @@ int main(int argc, char **argv)
   return 0;
 }
 
-void lsCallback(const std_msgs::Int32MultiArray::ConstPtr& array) {
-  int i = 0;
-  for(std::vector<int>::const_iterator it = array->data.begin(); it != array->data.end(); ++it) {
-    linesensor[i] = *it;
-    i++;
-  }
+
+void crossCheckCallback(const std_msgs::Int8::ConstPtr& dummy) {
+  //右旋回とか左旋回完了の情報もできれば突っ込みたい
+  //Emptyにして旋回は別にすべきか…？
+  isMachineAtCross = true;
 }
 
 void pulseLCallback(const std_msgs::Int32::ConstPtr& pL) {
@@ -330,6 +336,9 @@ void setTarget(char t, double par){
 		   motorPulseOutput.r + cvtUnitToPulse(par)};
     setMotorSpeed(DEFAULT_MOTOR_POW,DEFAULT_MOTOR_POW);
     ROS_INFO("setTargetTo %d",targetPulse.l);
+    std_msgs::Int8 crossCheckDelay;//##TAG_POS##;
+    crossCheckDelay.data = XCHECK_DELAY;
+    crossCheckRequest.publish(crossCheckDelay);
     state = WORKING;
     break;
     }
@@ -432,10 +441,11 @@ bool checkMoveProgress(char t, double par){
     //前進操作
     if((checkTargetPulse(motorPulseOutput.l,targetPulse.l,40,true) &&
       checkTargetPulse(motorPulseOutput.r,targetPulse.r,40,true)) ||
-      didMachineReachCross) //#########後退時については未対処###########
+      isMachineAtCross) //#########後退時については未対処###########
       {
-        didMachineReachCross = false;
+        isMachineAtCross = false;
         return 1;
+        //##TAG_CHECK##
       }
     break;
     }
@@ -505,13 +515,12 @@ void taskFlowHandler(){
     ROS_INFO("%c,%f",task,param);
   }else if(state == WORKING){
     if(checkMoveProgress(task,param) == true) {//目標パルスに届いたら
-     ROS_INFO("reached");
+      ROS_INFO("reached");
       setMotorSpeed(0,0);//マシンを止める。
       state = IDLE;//次の動作を受け付ける。
       moveMachineOnMap(task);
       showMap();
     }
- 
   }
   publishMotorInput();
 }
