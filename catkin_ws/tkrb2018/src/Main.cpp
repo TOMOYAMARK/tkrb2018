@@ -90,6 +90,7 @@ void testCallback(const std_msgs::String::ConstPtr& val);
 void moveMachineOnMap(char mv);//下記の関数を用いてマシンを移動する。
 void rotateMachine(int d);//回転
 void forbackMachine(int d);//前進後退
+void linesensorCallback(const std_msgs::Int8::ConstPtr& state);//交差に到達したり旋回が終了した場合に呼ばれる
 /*---------------------------------------------*/
 
 void lsCallback(const std_msgs::Int32MultiArray::ConstPtr& array);
@@ -113,6 +114,7 @@ void taskFlowHandler();//taskキューのメイン処理
 
 double startTime, endTime;//時間計測用変数
 
+bool didMachineReachCross = false;
 
 int main(int argc, char **argv)
 {
@@ -428,9 +430,13 @@ bool checkMoveProgress(char t, double par){
   case 'f':
     {
     //前進操作
-    if(checkTargetPulse(motorPulseOutput.l,targetPulse.l,40,true) &&
-       checkTargetPulse(motorPulseOutput.r,targetPulse.r,40,true))
-      return 1;
+    if((checkTargetPulse(motorPulseOutput.l,targetPulse.l,40,true) &&
+      checkTargetPulse(motorPulseOutput.r,targetPulse.r,40,true)) ||
+      didMachineReachCross) //#########後退時については未対処###########
+      {
+        didMachineReachCross = false;
+        return 1;
+      }
     break;
     }
   case 'b':
@@ -498,7 +504,7 @@ void taskFlowHandler(){
     ROS_INFO("accepted task");
     ROS_INFO("%c,%f",task,param);
   }else if(state == WORKING){
-    if(checkMoveProgress(task,param) == true) {//目標パルスに届いたら //こここ
+    if(checkMoveProgress(task,param) == true) {//目標パルスに届いたら
      ROS_INFO("reached");
       setMotorSpeed(0,0);//マシンを止める。
       state = IDLE;//次の動作を受け付ける。
