@@ -446,8 +446,8 @@ bool checkMoveProgress(char t, double par){
   case 'f':
     {
     //前進操作
-    if((checkTargetPulse(motorPulseOutput.l,targetPulse.l,40,true) &&
-      checkTargetPulse(motorPulseOutput.r,targetPulse.r,40,true)) &&
+    if((checkTargetPulse(motorPulseOutput.l,targetPulse.l,0,true) &&
+      checkTargetPulse(motorPulseOutput.r,targetPulse.r,0,true)) ||
       isMachineAtCross) //#########後退時については未対処###########
       {
         isMachineAtCross = false;
@@ -459,8 +459,8 @@ bool checkMoveProgress(char t, double par){
   case 'b':
     {
     //後退操作
-    if(checkTargetPulse(motorPulseOutput.l,targetPulse.l,40,false) &&
-       checkTargetPulse(motorPulseOutput.r,targetPulse.r,40,false))
+    if(checkTargetPulse(motorPulseOutput.l,targetPulse.l,0,false) &&
+       checkTargetPulse(motorPulseOutput.r,targetPulse.r,0,false))
       return 1;
     break;
     }

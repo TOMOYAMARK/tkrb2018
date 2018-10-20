@@ -13,7 +13,7 @@ first = 0
 shoot = [
     ['z',-70],
     ['p',1],
-    ['n',80],
+    ['n',90],
     ['p',2],
     ['c',0],
     ['p',1],
@@ -156,7 +156,7 @@ def planQueueHandler(req):
     else:
         resp.task = plan[0][0]
         resp.param = plan[0][1]
-	if(resp.task == 'f' or resp.task == 'b'):resp.param += 0.2
+	#if(resp.task == 'f' or resp.task == 'b'):resp.param += 0.2
     	plan.pop(first)
     
     return resp
