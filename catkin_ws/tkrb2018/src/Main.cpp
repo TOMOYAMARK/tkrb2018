@@ -28,7 +28,7 @@ double UNIT_SCALE = 300;
 //#define WHEEL_DIAMETER 150//mm
 //#define MM_PER_PULSE 
 #define DEFAULT_MOTOR_POW 40//max 100(%)
-#define INNER_WHEEL_DISTANCE 330//mmタイヤ間距離
+#define INNER_WHEEL_DISTANCE 320//mmタイヤ間距離
 
 /*-------------------機体の情報-----------------*/
 int selfPosition[2] = {4,9};//初期位置。下図のS
@@ -40,7 +40,7 @@ int selfPosition[2] = {4,9};//初期位置。下図のS
 
 double WHEEL_DIAMETER = 150;
 double STEP = 1.8;
-double PI = 3.141;
+double PI = 3.14159;
 int headingDirection = FORWARD;//最初は前方を向いている。
 double MM_PER_PULSE = 2.35575;//mm
 
@@ -49,7 +49,7 @@ stateParam state = IDLE;//マシンのタスク受付状態
 /*----------------------------------------------*/
 
 /*-------------------ラインセンサ-----------------*/
-#define XCHECK_DELAY 3
+#define XCHECK_DELAY 5
 //##TAG_CHECK##
 //交差に入ったかチェックするためのフラグ
 //実際のディレイは XCHECK_DELAY*10 ms より遅い
@@ -335,7 +335,7 @@ void setTarget(char t, double par){
     targetPulse = {motorPulseOutput.l + cvtUnitToPulse(par),
 		   motorPulseOutput.r + cvtUnitToPulse(par)};
     setMotorSpeed(DEFAULT_MOTOR_POW,DEFAULT_MOTOR_POW);
-    ROS_INFO("setTargetTo %d",targetPulse.l);
+    //ROS_INFO("setTargetTo %d",targetPulse.l);
     std_msgs::Int8 XcheckDelay;//##TAG_POS##;
     XcheckDelay.data = XCHECK_DELAY;
     XcheckRequest.publish(XcheckDelay);
@@ -348,6 +348,9 @@ void setTarget(char t, double par){
     targetPulse = {motorPulseOutput.l - cvtUnitToPulse(par),
 		   motorPulseOutput.r - cvtUnitToPulse(par)};
     setMotorSpeed(-DEFAULT_MOTOR_POW,-DEFAULT_MOTOR_POW);
+    std_msgs::Int8 XcheckDelay;//##TAG_POS##;
+    XcheckDelay.data = 1;
+    XcheckRequest.publish(XcheckDelay);
     state = WORKING;
     break;
     }
@@ -446,8 +449,8 @@ bool checkMoveProgress(char t, double par){
   case 'f':
     {
     //前進操作
-    if((checkTargetPulse(motorPulseOutput.l,targetPulse.l,0,true) &&
-      checkTargetPulse(motorPulseOutput.r,targetPulse.r,0,true)) ||
+    if((checkTargetPulse(motorPulseOutput.l,targetPulse.l,40,true) &&
+      checkTargetPulse(motorPulseOutput.r,targetPulse.r,40,true)) &&
       isMachineAtCross) //#########後退時については未対処###########
       {
         isMachineAtCross = false;
@@ -459,9 +462,13 @@ bool checkMoveProgress(char t, double par){
   case 'b':
     {
     //後退操作
-    if(checkTargetPulse(motorPulseOutput.l,targetPulse.l,0,false) &&
-       checkTargetPulse(motorPulseOutput.r,targetPulse.r,0,false))
-      return 1;
+    if(checkTargetPulse(motorPulseOutput.l,targetPulse.l,30,false) &&
+       checkTargetPulse(motorPulseOutput.r,targetPulse.r,30,false) &&
+       isMachineAtCross)
+      {
+	isMachineAtCross = false;
+	return 1;
+      }
     break;
     }
   case 'r':
