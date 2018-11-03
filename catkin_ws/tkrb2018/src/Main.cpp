@@ -27,8 +27,8 @@ double UNIT_SCALE = 300;
 //#define STEP 1.8
 //#define WHEEL_DIAMETER 150//mm
 //#define MM_PER_PULSE 
-#define DEFAULT_MOTOR_POW 60//max 100(%)
-#define INNER_WHEEL_DISTANCE 320//mmタイヤ間距離
+#define DEFAULT_MOTOR_POW 50//max 100(%)
+#define INNER_WHEEL_DISTANCE 300//mmタイヤ間距離
 
 /*-------------------機体の情報-----------------*/
 int selfPosition[2] = {4,9};//初期位置。下図のS
@@ -49,7 +49,7 @@ stateParam state = IDLE;//マシンのタスク受付状態
 /*----------------------------------------------*/
 
 /*-------------------ラインセンサ-----------------*/
-#define XCHECK_DELAY 2
+#define XCHECK_DELAY 5
 //##TAG_CHECK##
 //交差に入ったかチェックするためのフラグ
 //実際のディレイは XCHECK_DELAY*10 ms より遅い
@@ -349,7 +349,7 @@ void setTarget(char t, double par){
 		   motorPulseOutput.r - cvtUnitToPulse(par)};
     setMotorSpeed(-DEFAULT_MOTOR_POW,-DEFAULT_MOTOR_POW);
     std_msgs::Int8 XcheckDelay;//##TAG_POS##;
-    XcheckDelay.data = XCHECK_DELAY;
+    XcheckDelay.data = 2;
     XcheckRequest.publish(XcheckDelay);
     state = WORKING;
     break;
