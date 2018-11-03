@@ -27,7 +27,7 @@ double UNIT_SCALE = 300;
 //#define STEP 1.8
 //#define WHEEL_DIAMETER 150//mm
 //#define MM_PER_PULSE 
-#define DEFAULT_MOTOR_POW 40//max 100(%)
+#define DEFAULT_MOTOR_POW 60//max 100(%)
 #define INNER_WHEEL_DISTANCE 320//mmタイヤ間距離
 
 /*-------------------機体の情報-----------------*/
@@ -49,7 +49,7 @@ stateParam state = IDLE;//マシンのタスク受付状態
 /*----------------------------------------------*/
 
 /*-------------------ラインセンサ-----------------*/
-#define XCHECK_DELAY 5
+#define XCHECK_DELAY 2
 //##TAG_CHECK##
 //交差に入ったかチェックするためのフラグ
 //実際のディレイは XCHECK_DELAY*10 ms より遅い
@@ -349,7 +349,7 @@ void setTarget(char t, double par){
 		   motorPulseOutput.r - cvtUnitToPulse(par)};
     setMotorSpeed(-DEFAULT_MOTOR_POW,-DEFAULT_MOTOR_POW);
     std_msgs::Int8 XcheckDelay;//##TAG_POS##;
-    XcheckDelay.data = 1;
+    XcheckDelay.data = XCHECK_DELAY;
     XcheckRequest.publish(XcheckDelay);
     state = WORKING;
     break;
@@ -359,6 +359,7 @@ void setTarget(char t, double par){
     //右旋回
     targetPulse = {motorPulseOutput.l + cvtDegreesToPulse(par),
 		   motorPulseOutput.r - cvtDegreesToPulse(par)};
+    ROS_INFO("%d",targetPulse.r);
     setMotorSpeed(DEFAULT_MOTOR_POW,-DEFAULT_MOTOR_POW);
     state = WORKING;
     break;
@@ -368,6 +369,7 @@ void setTarget(char t, double par){
     //左旋回
     targetPulse = {motorPulseOutput.l - cvtDegreesToPulse(par),
 		   motorPulseOutput.r + cvtDegreesToPulse(par)};
+    ROS_INFO("%d",targetPulse.l);
     setMotorSpeed(-DEFAULT_MOTOR_POW,DEFAULT_MOTOR_POW);
     state = WORKING;
     break;
@@ -450,8 +452,8 @@ bool checkMoveProgress(char t, double par){
     {
     //前進操作
     if((checkTargetPulse(motorPulseOutput.l,targetPulse.l,40,true) &&
-      checkTargetPulse(motorPulseOutput.r,targetPulse.r,40,true)) &&
-      isMachineAtCross) //#########後退時については未対処###########
+      checkTargetPulse(motorPulseOutput.r,targetPulse.r,40,true) ) &&
+       isMachineAtCross) //#########後退時については未対処###########
       {
         isMachineAtCross = false;
         return 1;
@@ -474,9 +476,11 @@ bool checkMoveProgress(char t, double par){
   case 'r':
     {
     //右旋回
-    if(checkTargetPulse(motorPulseOutput.l,targetPulse.l,0,true) &&
-       checkTargetPulse(motorPulseOutput.r,targetPulse.r,0,false))
-      return 1;
+      if(checkTargetPulse(motorPulseOutput.l,targetPulse.l,0,true) &&
+	 checkTargetPulse(motorPulseOutput.r,targetPulse.r,0,false))
+      {
+	return 1;
+      }
     break;
     }
   case 'l':
