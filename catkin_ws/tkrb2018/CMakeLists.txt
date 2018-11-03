@@ -59,6 +59,7 @@ find_package(OpenCV)
 add_service_files(
    FILES
    PlanQueue.srv
+   Snapshot.srv
 )
 
 ## Generate actions in the 'action' folder
